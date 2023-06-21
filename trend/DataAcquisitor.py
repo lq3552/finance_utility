@@ -149,24 +149,6 @@ class DataAcquisitor(object):
 
 
 if __name__ == "__main__":
-	# 股票代码
-	codes = ["002230", "600938"] 
-
-	# 开始日期
-	start_date = "20200621"
-	# 结束日期
-	end_date   = "20230621"
-
-	for code in codes:
-		print(f"正在获取 {code} 从 {start_date} 到 {end_date} 的 k线数据......")
-		# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
-		dataAcquisitor = DataAcquisitor(code, start_date, end_date, 0, outDir = "stock_price_data")
-		dataAcquisitor.save_to_csv()
-		# 保存k线数据到表格里面
-		print(f"股票代码：{code} 的 k线数据已保存到指定目录下的 {code}.csv 文件中")
-
-
-	'''
 	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
 	header = df.columns[0]
 	# 股票代码
@@ -186,4 +168,3 @@ if __name__ == "__main__":
 		# 保存k线数据到表格里面
 		print(f"股票代码：{code} 的 k线数据已保存到指定目录下的 {code}.csv 文件中")
 		i += 1
-	'''
