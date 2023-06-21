@@ -163,7 +163,7 @@ if __name__ == "__main__":
 	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
 	header = df.columns[0]
 	# 股票代码
-	codes = df[header] #["002230"] 
+	codes = df[header]
 
 	# 开始日期
 	start_date = "20180621"
