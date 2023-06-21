@@ -65,7 +65,7 @@ class DataAcquisitor(object):
 			print("File(s) not found!")
 
 	def save_to_csv(self):
-		if not os.path.exists(path):
+		if not os.path.exists(self.outDir):
 			os.makedirs(f"{self.outDir}")
 		self.dayK.to_csv(f"{self.outDir}/{self.code}_day.csv", encoding="utf-8-sig", index=None)
 		self.weekK.to_csv(f"{self.outDir}/{self.code}_week.csv", encoding="utf-8-sig", index=None)
