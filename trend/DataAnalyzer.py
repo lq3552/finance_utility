@@ -113,14 +113,13 @@ if __name__ == "__main__":
 	header = df.columns[0]
 	# 股票代码
 	codes = df[header] #["002230"] 
-	codes = ["002230"] 
 
 	i = 0
 	signals = []
 	for code in codes:
 		print(f"{i}正在分析 {code} 的k线数据......")
 		# read K-line data TODO: slicing the date using PANDAS
-		dataAcquisitor = DataAcquisitor(code, 0, 0, 1, inDir = "stock_price_data")
+		dataAcquisitor = DataAcquisitor(code, 0, 0, False, 1, inDir = "stock_price_data")
 		dataAnalyzer = DataAnalyzer(dataAcquisitor)
 		signal = dataAnalyzer.send_signal()
 		signals.append(signal)

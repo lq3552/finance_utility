@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 import pandas as pd
 import requests
+import os
 
 class DataAcquisitor(object):
 
@@ -30,18 +31,19 @@ class DataAcquisitor(object):
 	columns = list(EastmoneyKlines.values())
 	fields2 = ",".join(fields)
 
-	def __init__(self, code: str, beg: str, end: str, mode: int = 0, inDir: str = ".", outDir: str = "."):
+	def __init__(self, code: str, beg: str, end: str, isIndex: bool = False, mode: int = 0, inDir: str = ".", outDir: str = "."):
 		'''
 		参数
 			code :  6 位股票代码
 			beg:    开始日期 例如 20200101
 			end:    结束日期 例如 20200201
 			mode:   0 - 在线 1 - 离线
+			mode:   0 - 在线 1 - 离线
 			inDir:  输入数据文件夹路径
 			outDir: 输出数据文件夹路径
 		'''
 		self.code  = code
-		self._secid = self._gen_secid()
+		self._secid = self._gen_secid(isIndex)
 		self.beg   = beg
 		self.end   = end
 
@@ -55,38 +57,46 @@ class DataAcquisitor(object):
 			self.read_from_csv()
 
 	def read_from_csv(self):
-		self.dayK =   pd.read_csv(f"{self.inDir}/{self.code}_day.csv", encoding="utf-8-sig")
-		self.weekK =  pd.read_csv(f"{self.inDir}/{self.code}_week.csv", encoding="utf-8-sig")
-		self.monthK = pd.read_csv(f"{self.inDir}/{self.code}_month.csv", encoding="utf-8-sig")
+		try:
+			self.dayK =   pd.read_csv(f"{self.inDir}/{self.code}_day.csv", encoding="utf-8-sig")
+			self.weekK =  pd.read_csv(f"{self.inDir}/{self.code}_week.csv", encoding="utf-8-sig")
+			self.monthK = pd.read_csv(f"{self.inDir}/{self.code}_month.csv", encoding="utf-8-sig")
+		except:
+			print("File(s) not found!")
 
 	def save_to_csv(self):
+		if not os.path.exist(path):
+			os.makedirs(f"{self.outDir}")
 		self.dayK.to_csv(f"{self.outDir}/{self.code}_day.csv", encoding="utf-8-sig", index=None)
 		self.weekK.to_csv(f"{self.outDir}/{self.code}_week.csv", encoding="utf-8-sig", index=None)
 		self.monthK.to_csv(f"{self.outDir}/{self.code}_month.csv", encoding="utf-8-sig", index=None)
 
-	def _gen_secid(self) -> str:
-	    '''
-	    生成东方财富专用的secid
+	def _gen_secid(self, isIndex: bool) -> str:
+		'''
+		生成东方财富专用的secid
+
+		Parameters
+		----------
+		mode: 0 - 股票 1 - 指数
 	
-	    Parameters
-	    ----------
-	
-	    Return
-	    ------
-	    str: 指定格式的字符串
-	
-	    '''
-	    # 沪市指数
-	    if self.code[:3] == '000':
-	        return f'1.{self.code}'
-	    # 深证指数
-	    if self.code[:3] == '399':
-	        return f'0.{self.code}'
-	    # 沪市股票
-	    if self.code[0] != '6':
-	        return f'0.{self.code}'
-	    # 深市股票
-	    return f'1.{self.code}'
+		Return
+		------
+		str: 指定格式的字符串
+		'''
+
+		if isIndex:
+			# 沪市指数
+			if self.code[:3] == '000':
+				return f'1.{self.code}'
+			# 深证指数
+			if self.code[:3] == '399':
+				return f'0.{self.code}'
+		else:
+			# 沪市股票
+			if self.code[0] != '6':
+				return f'0.{self.code}'
+			# 深市股票
+			return f'1.{self.code}'
 	
 	def _get_k_history(self, klt: int = 101, fqt: int = 1) -> pd.DataFrame:
 	    '''
@@ -163,7 +173,7 @@ if __name__ == "__main__":
 	for code in codes:
 		print(f"{i}正在获取 {code} 从 {start_date} 到 {end_date} 的 k线数据......")
 		# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
-		dataAcquisitor = DataAcquisitor(code, start_date, end_date, 0, outDir = "stock_price_data")
+		dataAcquisitor = DataAcquisitor(code, start_date, end_date, False, 0, outDir = "stock_price_data")
 		dataAcquisitor.save_to_csv()
 		# 保存k线数据到表格里面
 		print(f"股票代码：{code} 的 k线数据已保存到指定目录下的 {code}.csv 文件中")
