@@ -28,7 +28,7 @@ class DataAcquisitor(object):
         'Referer': 'http://quote.eastmoney.com/center/gridlist.html'
 	}
 	fields = list(EastmoneyKlines.keys())
-	columns = list(EastmoneyKlines.values())
+	columns = list(EastmoneyKlines.values())[1:]
 	fields2 = ",".join(fields)
 
 	def __init__(self, code: str, beg: str, end: str, isIndex: bool = False, mode: int = 0, inDir: str = ".", outDir: str = "."):
@@ -58,18 +58,18 @@ class DataAcquisitor(object):
 
 	def read_from_csv(self):
 		try:
-			self.dayK =   pd.read_csv(f"{self.inDir}/{self.code}_day.csv", encoding="utf-8-sig")
-			self.weekK =  pd.read_csv(f"{self.inDir}/{self.code}_week.csv", encoding="utf-8-sig")
-			self.monthK = pd.read_csv(f"{self.inDir}/{self.code}_month.csv", encoding="utf-8-sig")
+			self.dayK =   pd.read_csv(f"{self.inDir}/{self.code}_day.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
+			self.weekK =  pd.read_csv(f"{self.inDir}/{self.code}_week.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
+			self.monthK = pd.read_csv(f"{self.inDir}/{self.code}_month.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
 		except:
 			print("File(s) not found!")
 
 	def save_to_csv(self):
 		if not os.path.exists(self.outDir):
 			os.makedirs(f"{self.outDir}")
-		self.dayK.to_csv(f"{self.outDir}/{self.code}_day.csv", encoding="utf-8-sig", index=None)
-		self.weekK.to_csv(f"{self.outDir}/{self.code}_week.csv", encoding="utf-8-sig", index=None)
-		self.monthK.to_csv(f"{self.outDir}/{self.code}_month.csv", encoding="utf-8-sig", index=None)
+		self.dayK.to_csv(f"{self.outDir}/{self.code}_day.csv", encoding="utf-8-sig")
+		self.weekK.to_csv(f"{self.outDir}/{self.code}_week.csv", encoding="utf-8-sig")
+		self.monthK.to_csv(f"{self.outDir}/{self.code}_month.csv", encoding="utf-8-sig")
 
 	def _gen_secid(self, isIndex: bool) -> str:
 		'''
@@ -99,10 +99,10 @@ class DataAcquisitor(object):
 			return f'1.{self.code}'
 	
 	def _get_k_history(self, klt: int = 101, fqt: int = 1) -> pd.DataFrame:
-	    '''
-	    功能获取k线数据
-	    -
-	    参数
+		'''
+		功能获取k线数据
+		-
+		参数
 	        klt: k线间距 默认为 101 即日k
 	            klt:1 1 分钟
 	            klt:5 5 分钟
@@ -113,8 +113,8 @@ class DataAcquisitor(object):
 	            不复权 : 0
 	            前复权 : 1
 	            后复权 : 2 
-	    '''
-	    params = (
+		'''
+		params = (
 	        ("fields1", "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13"),
 	        ("fields2", self.fields2),
 	        ("beg", self.beg),
@@ -123,39 +123,40 @@ class DataAcquisitor(object):
 	        ("secid", self._secid),
 	        ("klt", f"{klt}"),
 	        ("fqt", f"{fqt}"),
-	    )
-	    params = dict(params)
-	    base_url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get'
-	    url = base_url+'?'+urlencode(params)
-	    json_response: dict = requests.get(
+		)
+		params = dict(params)
+		base_url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get'
+		url = base_url+'?'+urlencode(params)
+		json_response: dict = requests.get(
 	        url, headers = self.EastmoneyHeaders).json()
 	
-	    data = json_response.get('data')
-	    if data is None:
-	        if self._secid[0] == '0':
-	            self._secid = f"1.{self.code}"
-	        else:
-	            self._secid = f"0.{self.code}"
-	        params["secid"] = self._secid
-	        url = base_url + '?' + urlencode(params)
-	        json_response: dict = requests.get(
-	            url, headers = self.EastmoneyHeaders).json()
-	        data = json_response.get("data")
-	    if data is None:
-	        print("股票代码:", self.code, "可能有误")
-	        return pd.DataFrame(columns = self.columns)
+		data = json_response.get('data')
+		if data is None:
+			if self._secid[0] == '0':
+				self._secid = f"1.{self.code}"
+			else:
+				self._secid = f"0.{self.code}"
+			params["secid"] = self._secid
+			url = base_url + '?' + urlencode(params)
+			json_response: dict = requests.get(
+				url, headers = self.EastmoneyHeaders).json()
+			data = json_response.get("data")
+		if data is None:
+			print("股票代码:", self.code, "可能有误")
+			return pd.DataFrame(columns = self.columns)
 	
-	    klines = data['klines']
+		klines = data['klines']
+
+		rows = []
+		index = []
+		for _kline in klines:
+			kline = _kline.split(',')
+			index.append(kline[0])
+			rows.append(kline[1:])
 	
-	    rows = []
-	    for _kline in klines:
-	
-	        kline = _kline.split(',')
-	        rows.append(kline)
-	
-	    df = pd.DataFrame(rows, columns = self.columns)
-	
-	    return df
+		df = pd.DataFrame(rows, columns = self.columns, index = index)
+
+		return df
 
 
 if __name__ == "__main__":
@@ -163,9 +164,10 @@ if __name__ == "__main__":
 	header = df.columns[0]
 	# 股票代码
 	codes = df[header] #["002230"] 
+	codes = ["000001"]
 
 	# 开始日期
-	start_date = "20200621"
+	start_date = "20180621"
 	# 结束日期
 	end_date   = "20230621"
 	

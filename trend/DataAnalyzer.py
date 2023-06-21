@@ -26,10 +26,6 @@ class DataAnalyzer(object):
 		self.derivativeTodayDay20   = self.compute_derivative_today(0)
 		self.derivativeTodayWeek20  = self.compute_derivative_today(1)
 		self.derivativeTodayMonth20 = self.compute_derivative_today(2)
-#		self.plot_MA_and_K(0)
-#		self.plot_MA_and_K(1)
-#		self.plot_MA_and_K(2)
-#		print(self.derivativeTodayDay20, self.derivativeTodayWeek20, self.derivativeTodayMonth20)
 
 	def compute_moving_average(self, period: int, window: int): # for now I just assume we have enough data, otherwise simply skip
 		if period == 0:
@@ -47,27 +43,6 @@ class DataAnalyzer(object):
 			return movingAverages
 		except:
 			return np.zeros(1)
-
-	def plot_MA_and_K(self, period: int):
-		if period == 0:
-			data = self.dataAcquired.dayK["收盘"]
-			MA   = self.MADay
-			period = "Day "
-		elif period == 1:
-			data = self.dataAcquired.weekK["收盘"]
-			MA   = self.MAWeek
-			period = "Week "
-		else:
-			data = self.dataAcquired.monthK["收盘"]
-			MA   = self.MAMonth
-			period = "Month "
-
-		windows = MA.keys()
-		plt.plot(data, label = period + "K")
-		for window in windows:
-			plt.plot(np.arange(window, window + len(MA[window])), MA[window], label = "MA: " + str(window))
-		plt.legend()
-		plt.show()
 
 	def compute_derivative_today(self, period: int):
 		'''
@@ -92,10 +67,13 @@ class DataAnalyzer(object):
 		'''
 		return 0
 
-	def send_signal(self):
+	def get_closing_price_today(self):
 		price = self.dataAcquired.dayK["收盘"]
-		print(price[price.shape[0] - 1])
-		if(price[price.shape[0] - 1] > 100):
+		return price[price.shape[0] - 1]
+
+
+	def send_signal(self, maximumPrice):
+		if(self.get_closing_price_today() > maximumPrice): # at least 100 * maximumPrice RMB to buy in
 			return self.WAITING
 		if (self.derivativeTodayWeek20 <= 0 and self.derivativeTodayMonth20 <= 0)\
 		  or (self.derivativeTodayDay20 <= 0 and self.derivativeTodayWeek20 <= 0):
@@ -106,6 +84,30 @@ class DataAnalyzer(object):
 			return self.RISING_LONG
 		else:
 			return self.WAITING
+
+	def plot_MA_and_K(self, period: int):
+		if period == 0:
+			data = self.dataAcquired.dayK["收盘"]
+			MA   = self.MADay
+			period = "Day "
+		elif period == 1:
+			data = self.dataAcquired.weekK["收盘"]
+			MA   = self.MAWeek
+			period = "Week "
+		else:
+			data = self.dataAcquired.monthK["收盘"]
+			MA   = self.MAMonth
+			period = "Month "
+
+		fig, ax = plt.subplots()
+		windows = MA.keys()
+		ax.plot(data, label = period + "K") #TODO: remove skipped date_time
+		for window in windows:
+			ax.plot(data.index[window - 1:], MA[window], label = "MA: " + str(window))
+		plt.legend()
+		plt.show()
+		plt.close()
+
 
 
 if __name__ == "__main__":
@@ -121,7 +123,11 @@ if __name__ == "__main__":
 		# read K-line data TODO: slicing the date using PANDAS
 		dataAcquisitor = DataAcquisitor(code, 0, 0, False, 1, inDir = "stock_price_data")
 		dataAnalyzer = DataAnalyzer(dataAcquisitor)
-		signal = dataAnalyzer.send_signal()
+		if dataAcquisitor.code == "000001":
+			dataAnalyzer.plot_MA_and_K(0)
+			dataAnalyzer.plot_MA_and_K(1)
+			dataAnalyzer.plot_MA_and_K(2)
+		signal = dataAnalyzer.send_signal(60)
 		signals.append(signal)
 		i += 1
 	signals = np.array(signals)
