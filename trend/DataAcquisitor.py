@@ -164,16 +164,16 @@ if __name__ == "__main__":
 	header = df.columns[0]
 	# 股票代码
 	codes = df[header] #["002230"] 
-	codes = ["000001"]
 
 	# 开始日期
 	start_date = "20180621"
 	# 结束日期
 	end_date   = "20230621"
 	
-	i = 0
+	size = len(codes)
+	i = 1
 	for code in codes:
-		print(f"{i}正在获取 {code} 从 {start_date} 到 {end_date} 的 k线数据......")
+		print(f"{i}/{size} 正在获取 {code} 从 {start_date} 到 {end_date} 的 k线数据......")
 		# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
 		dataAcquisitor = DataAcquisitor(code, start_date, end_date, False, 0, outDir = "stock_price_data")
 		dataAcquisitor.save_to_csv()
