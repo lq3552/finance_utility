@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import pandas as pd
 from DataAcquisitor import DataAcquisitor
@@ -15,17 +16,28 @@ class DataAnalyzer(object):
 
 	def __init__(self, _dataAcquired: DataAcquisitor):
 		self._dataAcquired = _dataAcquired
-		self._MADay = {5:    self.compute_moving_average(0, 5),
-					  10:   self.compute_moving_average(0, 10),
-					  20:   self.compute_moving_average(0, 20),
-					  60:   self.compute_moving_average(0, 60)}
-		self._MAWeek = {5:   self.compute_moving_average(1, 5),
-					   10:  self.compute_moving_average(1, 10),
-					   20:  self.compute_moving_average(1, 20),
-					   60:  self.compute_moving_average(1, 60)}
+		self._MADay   = {5:    self.compute_moving_average(0, 5),
+					    10:   self.compute_moving_average(0, 10),
+					    20:   self.compute_moving_average(0, 20),
+					    60:   self.compute_moving_average(0, 60)}
+		self._MAWeek  = {5:   self.compute_moving_average(1, 5),
+					    10:  self.compute_moving_average(1, 10),
+					    20:  self.compute_moving_average(1, 20),
+					    60:  self.compute_moving_average(1, 60)}
 		self._MAMonth = {5:  self.compute_moving_average(2, 5),
 					    10: self.compute_moving_average(2, 10),
 					    20: self.compute_moving_average(2, 20)}
+		self._smoothedDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 0)
+		self._smoothedWeekMA5  = self.compute_smoothed_MA5(1, 11, deriv = 0)
+		self._smoothedMonthMA5 = self.compute_smoothed_MA5(2, 11, deriv = 0)
+        # smoothed derivatives is used to find local extrema
+		self._smoothedDerivativeDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 1)
+		self._smoothedDerivativeWeekMA5  = self.compute_smoothed_MA5(1, 11, deriv = 1)
+		self._smoothedDerivativeMonthMA5 = self.compute_smoothed_MA5(2, 11, deriv = 1)
+		self._lastMaximumDayMA5   = self.get_historical_maximum_closest_to_today(0)
+		self._lastMaximumWeekMA5  = self.get_historical_maximum_closest_to_today(1)
+		self._lastMaximumMonthMA5 = self.get_historical_maximum_closest_to_today(2)
+        # simply approximate derivatives f today's trends by finite difference of MAs
 		self._derivativeTodayDay   = {5:  self.compute_derivative_today(0, 5),
 									 20: self.compute_derivative_today(0, 20),
 									 60: self.compute_derivative_today(0, 60)}
@@ -40,19 +52,36 @@ class DataAnalyzer(object):
 		'''
 		return self._dataAcquired
 
-	def get_MA(self):
+	def get_closing_price_history(self, period: int) -> pd.DataFrame:
 		'''
-		return dictionary of day, week and month moving averages
+		param:
+			period: day - 0, week - 1 or month - 2
 		'''
-		return self._MADay, self._MAWeek, self._MAMonth
-
-	def compute_moving_average(self, period: int, window: int): # for now I just assume we have enough data, otherwise simply skip
 		if period == 0:
-			data = self._dataAcquired.get_day_k()["收盘"]
+			return self._dataAcquired.get_day_k()["收盘"]
 		elif period == 1:
-			data = self._dataAcquired.get_week_k()["收盘"]
+			return self._dataAcquired.get_week_k()["收盘"]
 		else:
-			data = self._dataAcquired.get_month_k()["收盘"]
+			return self._dataAcquired.get_month_k()["收盘"]
+
+	def get_MA(self, period: int) -> np.ndarray:
+		'''
+		param:
+			period: day - 0, week - 1 or month - 2
+		'''
+		if period == 0:
+			return self._MADay
+		elif period == 1:
+			return self._MAWeek
+		else:
+			return self._MAMonth
+
+	def compute_moving_average(self, period: int, window: int) -> np.ndarray: # for now I just assume we have enough data, otherwise simply skip
+		'''
+		param:
+			period: day - 0, week - 1 or month - 2
+		'''
+		data = self.get_closing_price_history(period)
 
 		if len(data) < window: # not enough data, should only happen to Month-K
 			return np.zeros(1)
@@ -63,28 +92,44 @@ class DataAnalyzer(object):
 		except:
 			return np.zeros(1)
 
-	def compute_derivative_today(self, period: int, window: int, stencil: int = 2):
+	def compute_smoothed_MA5(self, period: int, window: int, deriv: int = 0, **kwargs) -> np.ndarray:
+		'''
+		smooth data using a cubic Savitzky–Golay filter
+
+		param:
+			period: day - 0, week - 1 or month - 2
+			window: size of the window
+		'''
+		data = self.get_MA(period)[5]
+		return savgol_filter(data, window, 3, deriv, **kwargs)
+
+	def compute_derivative_today(self, period: int, window: int, stencil: int = 2) -> np.float64:
+		'''
+		param:
+			period: day - 0, week - 1 or month - 2
+		'''
+		MA = self.get_MA(period)[window]
+		try:
+			return (MA[-1] - MA[-1 - stencil]) / stencil
+		except:
+			return 0.0
+
+	def get_historical_maximum_closest_to_today(self, period: int) -> np.float32:
 		'''
 		param:
 			period: day - 0, week - 1 or month - 2
 		'''
 		if period == 0:
-			MA   = self._MADay[window]
+			MA5, dMA5 = self._smoothedDayMA5, self._smoothedDerivativeDayMA5
 		elif period == 1:
-			MA   = self._MAWeek[window]
+			MA5, dMA5 = self._smoothedWeekMA5, self._smoothedDerivativeWeekMA5
 		else:
-			MA   = self._MAMonth[window]
-		try:
-			return (MA[-1] - MA[-1 - stencil]) / stencil
-		except:
-			return 0
+			MA5, dMA5 = self._smoothedMonthMA5, self._smoothedDerivativeMonthMA5
 
-	def get_historical_maximum_closest_to_today(self, period: int):
-		'''
-		param:
-			period: day - 0, week - 1 or month - 2
-		'''
-		return 0
+		for i in range(len(MA5) - 2, -1, -1):
+			if dMA5[i] > 0 and dMA5[i + 1] < 0: # I don't think I need to bother with dMA5 == 0 but I will make it robuster later
+				return MA5[i]
+		return 10000
 
 	def get_closing_price_today(self):
 		price = self._dataAcquired.get_day_k()["收盘"]
@@ -107,24 +152,27 @@ class DataAnalyzer(object):
 		  or (self._derivativeTodayDay[20] <= 0 and self._derivativeTodayWeek[20] <= 0):
 			return self.WAIT
 		elif (self._derivativeTodayDay[20] > 0 and self._derivativeTodayWeek[20] > 0 and self._derivativeTodayMonth[20] <= 0):
+			# potential "terminal lucidity"
+			if(self.get_closing_price_today() < 1.0 * min(self._lastMaximumDayMA5, self._lastMaximumWeekMA5)):
+				return self.WAIT
 			return self.RISING_SHORT
 		elif (self._derivativeTodayWeek[20] > 0 and self._derivativeTodayMonth[20] > 0):
+			# potential "terminal lucidity"
+			if(self.get_closing_price_today() < 1.0 * min(self._lastMaximumWeekMA5, self._lastMaximumMonthMA5)):
+				return self.WAIT
 			return self.RISING_LONG
+		# Noob, let's start with simple trends
 		else:
 			return self.WAIT
 
 	def plot_MA_and_K(self, period: int):
+		data = self.get_closing_price_history(period)
+		MA = self.get_MA(period)
 		if period == 0:
-			data = self._dataAcquired.get_day_k()["收盘"]
-			MA   = self._MADay
 			period = "Day "
 		elif period == 1:
-			data = self._dataAcquired.get_week_k()["收盘"]
-			MA   = self._MAWeek
 			period = "Week "
 		else:
-			data = self._dataAcquired.get_month_k()["收盘"]
-			MA   = self._MAMonth
 			period = "Month "
 
 		fig, ax = plt.subplots()
@@ -152,7 +200,8 @@ if __name__ == "__main__":
 		# read K-line data TODO: slicing the date using PANDAS
 		dataAcquisitor = DataAcquisitor(code, 0, 0, False, 1, inDir = "stock_price_data")
 		dataAnalyzer = DataAnalyzer(dataAcquisitor)
-		if dataAnalyzer.get_data_acquired().get_code() == "000063":
+		if dataAnalyzer.get_data_acquired().get_code() == "000800":
+			print("高点：", dataAnalyzer._lastMaximumDayMA5)
 			dataAnalyzer.plot_MA_and_K(0)
 			dataAnalyzer.plot_MA_and_K(1)
 			dataAnalyzer.plot_MA_and_K(2)
