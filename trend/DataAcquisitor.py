@@ -8,7 +8,7 @@ class DataAcquisitor(object):
 	'''
 	静态成员，东方财富网爬取数据相关变量
 	'''
-	EastmoneyKlines = {
+	__EastmoneyKlines = {
         'f51': '日期',
         'f52': '开盘',
         'f53': '收盘',
@@ -21,15 +21,15 @@ class DataAcquisitor(object):
         'f60': '涨跌额',
         'f61': '换手率',
 	}
-	EastmoneyHeaders = {
+	__EastmoneyHeaders = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; Touch; rv:11.0) like Gecko',
         'Accept': '*/*',
         'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
         'Referer': 'http://quote.eastmoney.com/center/gridlist.html'
 	}
-	fields = list(EastmoneyKlines.keys())
-	columns = list(EastmoneyKlines.values())[1:]
-	fields2 = ",".join(fields)
+	__fields = list(__EastmoneyKlines.keys())
+	__columns = list(__EastmoneyKlines.values())[1:]
+	__fields2 = ",".join(__fields)
 
 	def __init__(self, code: str, beg: str, end: str, isIndex: bool = False, mode: int = 0, inDir: str = ".", outDir: str = "."):
 		'''
@@ -42,34 +42,46 @@ class DataAcquisitor(object):
 			inDir:  输入数据文件夹路径
 			outDir: 输出数据文件夹路径
 		'''
-		self.code  = code
+		self._code  = code
 		self._secid = self._gen_secid(isIndex)
-		self.beg   = beg
-		self.end   = end
+		self._beg   = beg
+		self._end   = end
 
-		self.inDir = inDir
-		self.outDir = outDir
+		self._inDir = inDir
+		self._outDir = outDir
 		if mode == 0:
-			self.dayK  = self._get_k_history(klt = 101)
-			self.weekK  = self._get_k_history(klt = 102)
-			self.monthK  = self._get_k_history(klt = 103)
+			self._dayK  = self._get_k_history(klt = 101)
+			self._weekK  = self._get_k_history(klt = 102)
+			self._monthK  = self._get_k_history(klt = 103)
 		else:
 			self.read_from_csv()
 
+	def get_code(self) -> str:
+		'''
+		get stock code
+		'''
+		return self._code
+	def get_day_k(self) -> pd.DataFrame:
+		return self._dayK 
+	def get_week_k(self) -> pd.DataFrame:
+		return self._weekK 
+	def get_month_k(self) -> pd.DataFrame:
+		return self._monthK 
+
 	def read_from_csv(self):
 		try:
-			self.dayK =   pd.read_csv(f"{self.inDir}/{self.code}_day.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
-			self.weekK =  pd.read_csv(f"{self.inDir}/{self.code}_week.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
-			self.monthK = pd.read_csv(f"{self.inDir}/{self.code}_month.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
+			self._dayK =   pd.read_csv(f"{self._inDir}/{self._code}_day.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
+			self._weekK =  pd.read_csv(f"{self._inDir}/{self._code}_week.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
+			self._monthK = pd.read_csv(f"{self._inDir}/{self._code}_month.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
 		except:
 			print("File(s) not found!")
 
 	def save_to_csv(self):
-		if not os.path.exists(self.outDir):
-			os.makedirs(f"{self.outDir}")
-		self.dayK.to_csv(f"{self.outDir}/{self.code}_day.csv", encoding="utf-8-sig")
-		self.weekK.to_csv(f"{self.outDir}/{self.code}_week.csv", encoding="utf-8-sig")
-		self.monthK.to_csv(f"{self.outDir}/{self.code}_month.csv", encoding="utf-8-sig")
+		if not os.path.exists(self._outDir):
+			os.makedirs(f"{self._outDir}")
+		self._dayK.to_csv(f"{self._outDir}/{self._code}_day.csv", encoding="utf-8-sig")
+		self._weekK.to_csv(f"{self._outDir}/{self._code}_week.csv", encoding="utf-8-sig")
+		self._monthK.to_csv(f"{self._outDir}/{self._code}_month.csv", encoding="utf-8-sig")
 
 	def _gen_secid(self, isIndex: bool) -> str:
 		'''
@@ -86,17 +98,17 @@ class DataAcquisitor(object):
 
 		if isIndex:
 			# 沪市指数
-			if self.code[:3] == '000':
-				return f'1.{self.code}'
+			if self._code[:3] == '000':
+				return f'1.{self._code}'
 			# 深证指数
-			if self.code[:3] == '399':
-				return f'0.{self.code}'
+			if self._code[:3] == '399':
+				return f'0.{self._code}'
 		else:
 			# 沪市股票
-			if self.code[0] != '6':
-				return f'0.{self.code}'
+			if self._code[0] != '6':
+				return f'0.{self._code}'
 			# 深市股票
-			return f'1.{self.code}'
+			return f'1.{self._code}'
 	
 	def _get_k_history(self, klt: int = 101, fqt: int = 1) -> pd.DataFrame:
 		'''
@@ -116,9 +128,9 @@ class DataAcquisitor(object):
 		'''
 		params = (
 	        ("fields1", "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13"),
-	        ("fields2", self.fields2),
-	        ("beg", self.beg),
-	        ("end", self.end),
+	        ("fields2", self.__fields2),
+	        ("beg", self._beg),
+	        ("end", self._end),
 	        ("rtntype", '6'),
 	        ("secid", self._secid),
 	        ("klt", f"{klt}"),
@@ -128,22 +140,22 @@ class DataAcquisitor(object):
 		base_url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get'
 		url = base_url+'?'+urlencode(params)
 		json_response: dict = requests.get(
-	        url, headers = self.EastmoneyHeaders).json()
+	        url, headers = self.__EastmoneyHeaders).json()
 	
 		data = json_response.get('data')
 		if data is None:
 			if self._secid[0] == '0':
-				self._secid = f"1.{self.code}"
+				self._secid = f"1.{self._code}"
 			else:
-				self._secid = f"0.{self.code}"
+				self._secid = f"0.{self._code}"
 			params["secid"] = self._secid
 			url = base_url + '?' + urlencode(params)
 			json_response: dict = requests.get(
-				url, headers = self.EastmoneyHeaders).json()
+				url, headers = self.__EastmoneyHeaders).json()
 			data = json_response.get("data")
 		if data is None:
-			print("股票代码:", self.code, "可能有误")
-			return pd.DataFrame(columns = self.columns)
+			print("股票代码:", self._code, "可能有误")
+			return pd.DataFrame(columns = self.__columns)
 	
 		klines = data['klines']
 
@@ -154,7 +166,7 @@ class DataAcquisitor(object):
 			index.append(kline[0])
 			rows.append(kline[1:])
 	
-		df = pd.DataFrame(rows, columns = self.columns, index = index)
+		df = pd.DataFrame(rows, columns = self.__columns, index = index)
 
 		return df
 
