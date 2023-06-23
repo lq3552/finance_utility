@@ -4,18 +4,28 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from DataAcquisitor import DataAcquisitor
 
+
 class DataAnalyzer(object):
 	'''
-	class-level (static) members
+	Information extractor and analyzer based on the stock data
 	'''
+
+	# class-level (static) members
 	EMPTY        = -2
 	SELL         = -1
 	WAIT         = 0
 	RISING_SHORT = 1
 	RISING_LONG  = 2
+	PeriodAlias = [[0, "d", "Day", "day"],
+				   [1, "w", "Week", "week"],
+				   [2, "m", "Month", "month"]]
 
-	def __init__(self, _dataAcquired: DataAcquisitor):
-		self._dataAcquired = _dataAcquired
+	def __init__(self, dataAcquired: DataAcquisitor):
+		'''
+		param:
+			dataAcquired: DataAcquisitor containing the stock data
+		'''
+		self._dataAcquired = dataAcquired
 		self._MADay   = {5:    self.compute_moving_average(0, 5),
 					    10:   self.compute_moving_average(0, 10),
 					    20:   self.compute_moving_average(0, 20),
@@ -34,9 +44,9 @@ class DataAnalyzer(object):
 		self._smoothedDerivativeDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 1)
 		self._smoothedDerivativeWeekMA5  = self.compute_smoothed_MA5(1, 11, deriv = 1)
 		self._smoothedDerivativeMonthMA5 = self.compute_smoothed_MA5(2, 11, deriv = 1)
-		self._lastMaximumDayMA5   = self.get_historical_maximum_closest_to_today(0)
-		self._lastMaximumWeekMA5  = self.get_historical_maximum_closest_to_today(1)
-		self._lastMaximumMonthMA5 = self.get_historical_maximum_closest_to_today(2)
+		self._lastMaximumDayMA5   = self.compute_historical_maximum_closest_to_today(0)
+		self._lastMaximumWeekMA5  = self.compute_historical_maximum_closest_to_today(1)
+		self._lastMaximumMonthMA5 = self.compute_historical_maximum_closest_to_today(2)
         # simply approximate derivatives f today's trends by finite difference of MAs
 		self._derivativeTodayDay   = {5:  self.compute_derivative_today(0, 5),
 									 20: self.compute_derivative_today(0, 20),
@@ -52,31 +62,31 @@ class DataAnalyzer(object):
 		'''
 		return self._dataAcquired
 
-	def get_closing_price_history(self, period: int) -> pd.DataFrame:
+	def get_closing_price_history(self, period) -> pd.DataFrame:
 		'''
 		param:
 			period: day - 0, week - 1 or month - 2
 		'''
-		if period == 0:
+		if period in self.PeriodAlias[0]:
 			return self._dataAcquired.get_day_k()["收盘"]
-		elif period == 1:
+		elif period in self.PeriodAlias[1]:
 			return self._dataAcquired.get_week_k()["收盘"]
 		else:
 			return self._dataAcquired.get_month_k()["收盘"]
 
-	def get_MA(self, period: int) -> np.ndarray:
+	def get_moving_average(self, period) -> np.ndarray:
 		'''
 		param:
 			period: day - 0, week - 1 or month - 2
 		'''
-		if period == 0:
+		if period in self.PeriodAlias[0]:
 			return self._MADay
-		elif period == 1:
+		elif period in self.PeriodAlias[1]:
 			return self._MAWeek
 		else:
 			return self._MAMonth
 
-	def compute_moving_average(self, period: int, window: int) -> np.ndarray: # for now I just assume we have enough data, otherwise simply skip
+	def compute_moving_average(self, period, window: int) -> np.ndarray: # for now I just assume we have enough data, otherwise simply skip
 		'''
 		param:
 			period: day - 0, week - 1 or month - 2
@@ -92,7 +102,7 @@ class DataAnalyzer(object):
 		except:
 			return np.zeros(1)
 
-	def compute_smoothed_MA5(self, period: int, window: int, deriv: int = 0, **kwargs) -> np.ndarray:
+	def compute_smoothed_MA5(self, period, window: int, deriv: int = 0, **kwargs) -> np.ndarray:
 		'''
 		smooth data using a cubic Savitzky–Golay filter
 
@@ -100,28 +110,46 @@ class DataAnalyzer(object):
 			period: day - 0, week - 1 or month - 2
 			window: size of the window
 		'''
-		data = self.get_MA(period)[5]
+		data = self.get_moving_average(period)[5]
 		return savgol_filter(data, window, 3, deriv, **kwargs)
 
-	def compute_derivative_today(self, period: int, window: int, stencil: int = 2) -> np.float64:
+	def get_derivative_today(self, period):
+		if period in self.PeriodAlias[0]:
+			return self._derivativeTodayDay
+		elif period in self.PeriodAlias[1]:
+			return self._derivativeTodayWeek
+		else:
+			return self._derivativeTodayMonth
+		return
+
+	def compute_derivative_today(self, period, window: int, stencil: int = 2) -> np.float64:
 		'''
 		param:
 			period: day - 0, week - 1 or month - 2
 		'''
-		MA = self.get_MA(period)[window]
+		MA = self.get_moving_average(period)[window]
 		try:
 			return (MA[-1] - MA[-1 - stencil]) / stencil
 		except:
 			return 0.0
 
-	def get_historical_maximum_closest_to_today(self, period: int) -> np.float32:
+	def get_historical_maximum_closest_to_today(self, period) -> np.float32:
+		if period in self.PeriodAlias[0]:
+			return self._lastMaximumDayMA5
+		elif period in self.PeriodAlias[1]:
+			return self._lastMaximumWeekMA5
+		else:
+			return self._lastMaximumMonthMA5
+		return
+
+	def compute_historical_maximum_closest_to_today(self, period) -> np.float32:
 		'''
 		param:
 			period: day - 0, week - 1 or month - 2
 		'''
-		if period == 0:
+		if period in self.PeriodAlias[0]:
 			MA5, dMA5 = self._smoothedDayMA5, self._smoothedDerivativeDayMA5
-		elif period == 1:
+		elif period in self.PeriodAlias[1]:
 			MA5, dMA5 = self._smoothedWeekMA5, self._smoothedDerivativeWeekMA5
 		else:
 			MA5, dMA5 = self._smoothedMonthMA5, self._smoothedDerivativeMonthMA5
@@ -135,9 +163,9 @@ class DataAnalyzer(object):
 		price = self._dataAcquired.get_day_k()["收盘"]
 		return price[price.shape[0] - 1]
 
-	def send_signal(self, maximumPrice):
+	def send_signal(self, maximumPrice) -> int:
 		if (self.get_closing_price_today() > maximumPrice): # at least 100 * maximumPrice RMB to buy in
-			return self.WAIT
+			return int(-maximumPrice)
 
 		# falling trend
 		if (self._MADay[5][-1] < self._MADay[60][-1]) or (self._MAWeek[5][-1] < self._MAWeek[60][-1]):
@@ -165,12 +193,12 @@ class DataAnalyzer(object):
 		else:
 			return self.WAIT
 
-	def plot_MA_and_K(self, period: int):
+	def plot_MA_and_K(self, period):
 		data = self.get_closing_price_history(period)
-		MA = self.get_MA(period)
-		if period == 0:
+		MA = self.get_moving_average(period)
+		if period in self.PeriodAlias[0]:
 			period = "Day "
-		elif period == 1:
+		elif period in self.PeriodAlias[1]:
 			period = "Week "
 		else:
 			period = "Month "
@@ -183,7 +211,6 @@ class DataAnalyzer(object):
 		plt.legend()
 		plt.show()
 		plt.close()
-
 
 
 if __name__ == "__main__":
