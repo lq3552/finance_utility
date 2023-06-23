@@ -30,6 +30,7 @@ class DataAcquisitor(object):
 	__fields = list(__EastmoneyKlines.keys())
 	__columns = list(__EastmoneyKlines.values())[1:]
 	__fields2 = ",".join(__fields)
+	_QuotationURLHeader = "https://xueqiu.com/S/"
 
 	def __init__(self, code: str, beg: str, end: str, isIndex: bool = False, mode: int = 0, inDir: str = ".", outDir: str = "."):
 		'''
@@ -43,6 +44,7 @@ class DataAcquisitor(object):
 			outDir: 输出数据文件夹路径
 		'''
 		self._code  = code
+		self._isIndex = isIndex
 		self._secid = self._gen_secid(isIndex)
 		self._beg   = beg
 		self._end   = end
@@ -61,6 +63,22 @@ class DataAcquisitor(object):
 		get stock code
 		'''
 		return self._code
+
+	def get_quotation_url(self) -> str:
+		'''
+		get stock quotation URL
+		'''
+		return DataAcquisitor._QuotationURLHeader + self._get_market() + self._code
+
+	def _get_market(self) -> str:
+		'''
+		获得股票交易市场
+		'''
+		if self._secid[0] == '0':
+			return 'SZ'
+		else:
+			return 'SH'
+	
 	def get_day_k(self) -> pd.DataFrame:
 		return self._dayK 
 	def get_week_k(self) -> pd.DataFrame:
@@ -104,10 +122,10 @@ class DataAcquisitor(object):
 			if self._code[:3] == '399':
 				return f'0.{self._code}'
 		else:
-			# 沪市股票
+			# 深市股票
 			if self._code[0] != '6':
 				return f'0.{self._code}'
-			# 深市股票
+			# 沪市股票
 			return f'1.{self._code}'
 	
 	def _get_k_history(self, klt: int = 101, fqt: int = 1) -> pd.DataFrame:

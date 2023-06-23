@@ -220,6 +220,7 @@ if __name__ == "__main__":
 	codes = df[header]
 
 	signals = []
+	urls = []
 	size = len(codes)
 	i = 1
 	for code in codes:
@@ -232,11 +233,11 @@ if __name__ == "__main__":
 			dataAnalyzer.plot_MA_and_K(0)
 			dataAnalyzer.plot_MA_and_K(1)
 			dataAnalyzer.plot_MA_and_K(2)
-		signal = dataAnalyzer.send_signal(60)
-		signals.append(signal)
+		signals.append(dataAnalyzer.send_signal(60))
+		urls.append(dataAnalyzer.get_data_acquired().get_quotation_url())
 		i += 1
 	signals = np.array(signals)
 	print(len(signals[np.where(signals>0)]))
-	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "备注": ['' for i in range(len(codes))]})
+	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "行情地址": urls, "备注": ['' for i in range(len(codes))]})
 	df.to_csv(f"signals.csv", encoding="utf-8-sig", index=None)
 
