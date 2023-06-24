@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 import pandas as pd
+import pandas_market_calendars as pm_calendar
 import requests
 import os
 import copy
@@ -165,16 +166,31 @@ class DataAcquisitor(object):
 		else: # unsupported
 			return copy.deepcopy(self.__emptyDataFrame)
 
-		# find the date to append new rows
+		# only keep the dates of new records
 		begOld = dfOld.index[0]
-		endOld = dfOld.index[-1]
 		beg = pd.DatetimeIndex([self._beg])[0]
-		end = pd.DatetimeIndex([self._end])[0]
-		if endOld > end:
-			return dfOld
-		beg = max(beg, endOld)
-		beg = beg.strftime(self.__dateFormat)
-		dfOld.drop(dfOld.index[-1], inplace = True) # drop the last row, because it could be updated during the market opening hours
+#		if beg < begOld: # prepend not supported yet
+#			dfOld = copy.deepcopy(self.__emptyDataFrame)
+		if True: # only fetch new data and append them to old data
+			endOld = dfOld.index[-1]
+			end = pd.DatetimeIndex([self._end])[0]
+			if endOld > end:
+				return dfOld
+			beg = max(beg, endOld)
+			# Check if the dates of new records are all holidays. If so, then there is no need to update.
+			marketCalendar = pm_calendar.get_calendar('XSHG').schedule(start_date = beg, end_date=end)
+			checkDate = beg + pd.Timedelta(days=1)
+			while(checkDate <= end):
+				if checkDate in marketCalendar.index:
+					break
+				checkDate += pd.Timedelta(days=1)
+			if checkDate > end:
+				return dfOld
+
+			beg = beg.strftime(self.__dateFormat)
+
+		# drop the last row, because it could be updated in the case of week/month K
+		dfOld.drop(dfOld.index[-1], inplace = True)
 
 		params = (
 	        ("fields1", "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13"),
@@ -231,15 +247,17 @@ if __name__ == "__main__":
 	codes = df[header]
 
 	# 开始日期
-	start_date = "20180621"
+	startDate = "20180621"
 	# 结束日期
-	end_date   = pd.to_datetime("today").strftime("%Y%m%d")
+	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
+	endDate   = pd.to_datetime("today").strftime("20230622")
+
 	size = len(codes)
 	i = 1
 	for code in codes:
-		print(f"{i}/{size} 正在获取 {code} 从 {start_date} 到 {end_date} 的 k线数据......")
+		print(f"{i}/{size} 正在获取 {code} 从 {startDate} 到 {endDate} 的 k线数据......")
 		# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
-		dataAcquisitor = DataAcquisitor(code, start_date, end_date, False, 0, outDir = "stock_price_data")
+		dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 0, outDir = "stock_price_data")
 		dataAcquisitor.save_to_csv()
 		# 保存k线数据到表格里面
 		print(f"股票代码：{code} 的 k线数据已保存到指定目录下的 {code}.csv 文件中")
