@@ -217,7 +217,7 @@ if __name__ == "__main__":
 	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
 	header = df.columns[0]
 	# 股票代码
-	codes = df[header]
+	codes = df[header][:2]
 
 	signals = []
 	urls = []
@@ -239,5 +239,6 @@ if __name__ == "__main__":
 	signals = np.array(signals)
 	print(len(signals[np.where(signals>0)]))
 	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "行情地址": urls, "备注": ['' for i in range(len(codes))]})
-	df.to_csv(f"signals.csv", encoding="utf-8-sig", index=None)
+	today = pd.to_datetime("today").strftime("%Y%m%d")
+	df.to_csv(f"long_short_signals/signals_{today}.csv", encoding="utf-8-sig", index=None)
 

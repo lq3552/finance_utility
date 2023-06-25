@@ -250,7 +250,6 @@ if __name__ == "__main__":
 	startDate = "20180621"
 	# 结束日期
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
-	endDate   = pd.to_datetime("today").strftime("20230622")
 
 	size = len(codes)
 	i = 1
