@@ -217,7 +217,7 @@ if __name__ == "__main__":
 	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
 	header = df.columns[0]
 	# 股票代码
-	codes = df[header][:2]
+	codes = df[header]
 
 	signals = []
 	urls = []
