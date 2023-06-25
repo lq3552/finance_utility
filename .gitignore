@@ -83,7 +83,7 @@ profile_default/
 ipython_config.py
 
 # pyenv
-#   For a library or package, you might want to ignore these files since the code is
+#   For a library or package, you might want to ignore these files since thode is
 #   intended to run in multiple environments; otherwise, check them in:
 # .python-version
 
@@ -153,7 +153,8 @@ cython_debug/
 
 # private
 *CashAllocator*
-stock_price_data/
+!stock_codes
+*.csv
 
 #system
 .DS_Store
