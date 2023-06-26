@@ -250,8 +250,14 @@ if __name__ == "__main__":
 		signals, urls = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
 							zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(inDir))),
 							total = size))
+		endDateOld = (pd.to_datetime("today") - pd.Timedelta(days = 1)).strftime("%Y%m%d")
+		signalsOld, _ = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
+							zip(codes, itertools.repeat(startDate), itertools.repeat(endDateOld), itertools.repeat(inDir))),
+							total = size))
+		pool.close()
+
 	print(f"保存购买信号......")
-	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "行情地址": urls, "备注": ['' for i in range(len(codes))]})
-	today = pd.to_datetime("today").strftime("%Y%m%d")
-	df.to_csv(f"long_short_signals/signals_{today}.csv", encoding="utf-8-sig", index=None)
+	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "上期信号": signalsOld, "行情地址": urls, "备注": ['' for i in range(len(codes))]})
+	lastStatus = ['']
+	df.to_csv(f"long_short_signals/signals_{endDate}.csv", encoding="utf-8-sig", index=None)
 

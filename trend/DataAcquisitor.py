@@ -294,3 +294,4 @@ if __name__ == "__main__":
 		result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
 					  zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
 					  total = size))
+		pool.close()
