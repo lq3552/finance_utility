@@ -155,6 +155,7 @@ cython_debug/
 *CashAllocator*
 !stock_codes
 *.csv
+*.numbers*
 
 #system
 .DS_Store
