@@ -5,6 +5,7 @@ import requests
 import os
 import copy
 
+
 class DataAcquisitor(object):
 
 	'''
@@ -33,7 +34,7 @@ class DataAcquisitor(object):
 	__columns = list(__EastmoneyKlines.values())[1:]
 	__fields2 = ",".join(__fields)
 	__dateFormat = "%Y%m%d"
-	__emptyDataFrame = pd.DataFrame(columns = __columns, index = pd.DatetimeIndex(["1900-01-01"]))
+	__emptyDataFrame = pd.DataFrame(columns = __columns, index = [pd.Timestamp.min])
 	_QuotationURLHeader = "https://xueqiu.com/S/"
 
 	class UnsupportedDataFrameError(BaseException):
@@ -45,7 +46,6 @@ class DataAcquisitor(object):
 			code :  6 位股票代码
 			beg:    开始日期 例如 20200101
 			end:    结束日期 例如 20200201
-			mode:   0 - 在线 1 - 离线
 			mode:   0 - 在线 1 - 离线
 			inDir:  输入数据文件夹路径
 			outDir: 输出数据文件夹路径
@@ -60,7 +60,7 @@ class DataAcquisitor(object):
 		if inDir == None:
 			inDir = outDir
 		self._inDir = inDir
-		self.read_from_csv()
+		self.read_from_csv(mode)
 		if mode == 0:
 			self._dayK  = self._get_k_history(klt = 101)
 			self._weekK  = self._get_k_history(klt = 102)
@@ -94,13 +94,29 @@ class DataAcquisitor(object):
 	def get_month_k(self) -> pd.DataFrame:
 		return self._monthK 
 
-	def read_from_csv(self):
+	def read_from_csv(self, mode: int):
+		'''
+		参数
+			mode: 0 - 在线 1 - 离线
+		'''
 		try:
-			self._dayK   = pd.read_csv(f"{self._inDir}/{self._code}_day.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
-			self._weekK  = pd.read_csv(f"{self._inDir}/{self._code}_week.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
-			self._monthK = pd.read_csv(f"{self._inDir}/{self._code}_month.csv", encoding="utf-8-sig", parse_dates = [0], index_col = 0)
+			if mode == 0:
+				beg = pd.Timestamp.min
+				end = pd.Timestamp.max
+			else:
+				beg = self._beg
+				end = self._end
+
+			self._dayK   = pd.read_csv(f"{self._inDir}/{self._code}_day.csv", encoding="utf-8-sig",
+									   parse_dates = [0], index_col = 0).loc[beg : end]
+			self._weekK  = pd.read_csv(f"{self._inDir}/{self._code}_week.csv", encoding="utf-8-sig",
+									   parse_dates = [0], index_col = 0).loc[beg : end]
+			self._monthK = pd.read_csv(f"{self._inDir}/{self._code}_month.csv", encoding="utf-8-sig",
+									   parse_dates = [0], index_col = 0).loc[beg : end]
+
 			if self._dayK.empty or self._weekK.empty or self._monthK.empty:
 				raise self.UnsupportedDataFrameError()
+
 		except (FileNotFoundError, self.UnsupportedDataFrameError):
 			self._dayK   = copy.deepcopy(self.__emptyDataFrame)
 			self._weekK  = copy.deepcopy(self.__emptyDataFrame)
@@ -240,24 +256,41 @@ class DataAcquisitor(object):
 		return df
 
 
+def acquire_and_save_stock_data(code: str, startDate: str, endDate: str, outDir: str):
+	print(f"正在获取 {code} 从 {startDate} 到 {endDate} 的 k线数据......")
+	# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
+	dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 0, outDir = outDir)
+	dataAcquisitor.save_to_csv()
+	# 保存k线数据到表格里面
+	print(f"股票代码：{code} 的 k线数据已保存到指定目录 {outDir} 下的csv 文件中")
+
+def acquire_and_save_stock_data_multiprocess(param):
+	try:
+		acquire_and_save_stock_data(*param)
+		return 0
+	except:
+		return 1
+
+	
 if __name__ == "__main__":
+	from multiprocessing import Pool
+	nproc = 8
+	import itertools
+	from tqdm.auto import tqdm
+
 	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
 	header = df.columns[0]
 	# 股票代码
 	codes = df[header]
-
 	# 开始日期
 	startDate = "20180621"
 	# 结束日期
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
+	# 输出路径
+	outDir    = "stock_price_data"
 
 	size = len(codes)
-	i = 1
-	for code in codes:
-		print(f"{i}/{size} 正在获取 {code} 从 {startDate} 到 {endDate} 的 k线数据......")
-		# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
-		dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 0, outDir = "stock_price_data")
-		dataAcquisitor.save_to_csv()
-		# 保存k线数据到表格里面
-		print(f"股票代码：{code} 的 k线数据已保存到指定目录下的 {code}.csv 文件中")
-		i += 1
+	with Pool(nproc) as pool:
+		result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
+					  zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
+					  total = size))

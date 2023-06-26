@@ -169,7 +169,10 @@ class DataAnalyzer(object):
 
 		# falling trend
 		if (self._MADay[5][-1] < self._MADay[60][-1]) or (self._MAWeek[5][-1] < self._MAWeek[60][-1]):
-			return self.EMPTY
+			if (self._derivativeTodayDay[5] > 0 and self._derivativeTodayWeek[5] > 0):
+				return self.WAIT
+			else:
+				return self.EMPTY
 
 		# downturn of trend
 		if (self._derivativeTodayDay[5] < 0 and self._derivativeTodayDay[20] < 0 and self._MADay[5][-1] < self._MADay[20][-1])\
@@ -181,7 +184,7 @@ class DataAnalyzer(object):
 			return self.WAIT
 		elif (self._derivativeTodayDay[20] > 0 and self._derivativeTodayWeek[20] > 0 and self._derivativeTodayMonth[20] <= 0):
 			# potential "terminal lucidity"
-			if(self.get_closing_price_today() < 1.0 * min(self._lastMaximumDayMA5, self._lastMaximumWeekMA5)):
+			if(self.get_closing_price_today() < 0.94 * min(self._lastMaximumDayMA5, self._lastMaximumWeekMA5)):
 				return self.WAIT
 			return self.RISING_SHORT
 		elif (self._derivativeTodayWeek[20] > 0 and self._derivativeTodayMonth[20] > 0):
@@ -205,7 +208,7 @@ class DataAnalyzer(object):
 
 		fig, ax = plt.subplots()
 		windows = MA.keys()
-		ax.plot(data, label = period + "K") #TODO: remove skipped date_time
+		ax.plot(data, label = period + "K") #TODO: skip market holidy date_time
 		for window in windows:
 			ax.plot(data.index[window - 1:], MA[window], label = "MA: " + str(window))
 		plt.legend()
@@ -213,31 +216,41 @@ class DataAnalyzer(object):
 		plt.close()
 
 
+def analyze_stock_data(code: str, startDate: str, endDate: str, inDir: str):
+	dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 1, inDir = inDir)
+	dataAnalyzer = DataAnalyzer(dataAcquisitor)
+	signal = dataAnalyzer.send_signal(60)
+	url   = dataAnalyzer.get_data_acquired().get_quotation_url()
+	return signal, url
+
+def analyze_stock_data_multiprocess(param):
+	return analyze_stock_data(*param)
+
+
 if __name__ == "__main__":
+	from multiprocessing import Pool
+	nproc = 8
+	import itertools
+	from tqdm.auto import tqdm
+
 	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
 	header = df.columns[0]
 	# 股票代码
 	codes = df[header]
+	# 开始日期
+	startDate = "20180621"
+	# 结束日期
+	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
+	# 输入路径
+	inDir     = "stock_price_data"
 
-	signals = []
-	urls = []
 	size = len(codes)
-	i = 1
-	for code in codes:
-		print(f"{i}/{size} 正在分析 {code} 的k线数据......")
-		# read K-line data TODO: slicing the date using PANDAS
-		dataAcquisitor = DataAcquisitor(code, 0, 0, False, 1, inDir = "stock_price_data")
-		dataAnalyzer = DataAnalyzer(dataAcquisitor)
-		if dataAnalyzer.get_data_acquired().get_code() == "000800":
-			print("高点：", dataAnalyzer._lastMaximumDayMA5)
-			dataAnalyzer.plot_MA_and_K(0)
-			dataAnalyzer.plot_MA_and_K(1)
-			dataAnalyzer.plot_MA_and_K(2)
-		signals.append(dataAnalyzer.send_signal(60))
-		urls.append(dataAnalyzer.get_data_acquired().get_quotation_url())
-		i += 1
-	signals = np.array(signals)
-	print(len(signals[np.where(signals>0)]))
+	with Pool(nproc) as pool:
+		print(f"正在分析沪深300成分股的k线数据......")
+		signals, urls = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
+							zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(inDir))),
+							total = size))
+	print(f"保存购买信号......")
 	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "行情地址": urls, "备注": ['' for i in range(len(codes))]})
 	today = pd.to_datetime("today").strftime("%Y%m%d")
 	df.to_csv(f"long_short_signals/signals_{today}.csv", encoding="utf-8-sig", index=None)
