@@ -258,6 +258,7 @@ if __name__ == "__main__":
 
 	print(f"保存购买信号......")
 	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "上期信号": signalsOld, "行情地址": urls, "备注": ['' for i in range(len(codes))]})
+	df.sort_values(by = ["购买信号","上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
 	lastStatus = ['']
 	df.to_csv(f"long_short_signals/signals_{endDate}.csv", encoding="utf-8-sig", index=None)
 
