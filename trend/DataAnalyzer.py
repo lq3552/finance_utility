@@ -257,8 +257,12 @@ if __name__ == "__main__":
 		pool.close()
 
 	print(f"保存购买信号......")
-	df = pd.DataFrame({"股票代码": codes, "购买信号": signals, "上期信号": signalsOld, "行情地址": urls, "备注": ['' for i in range(len(codes))]})
+	signalsDir = "long_short_signals"
+	df = pd.DataFrame({"行情地址": urls, "购买信号": signals, "上期信号": signalsOld, 
+					   "上期备注": ['' for i in range(len(codes))], "备注": ['' for i in range(len(codes))]},
+					   index = pd.Index(codes.astype(int), name = "股票代码"))
 	df.sort_values(by = ["购买信号","上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
-	lastStatus = ['']
-	df.to_csv(f"long_short_signals/signals_{endDate}.csv", encoding="utf-8-sig", index=None)
+	dfOld = pd.read_csv(f"{signalsDir}/signals_{endDateOld}.csv", index_col = 0, dtype = {"备注": str})
+	df["上期备注"] = dfOld["备注"]
+	df.to_csv(f"{signalsDir}/signals_{endDate}.csv")
 
