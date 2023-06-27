@@ -234,9 +234,12 @@ if __name__ == "__main__":
 	from tqdm.auto import tqdm
 
 	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
-	header = df.columns[0]
+	headerCode = df.columns[0]
+	headerName = df.columns[1]
 	# 股票代码
-	codes = df[header]
+	codes = df[headerCode]
+	names = df[headerName]
+	print(names)
 	# 开始日期
 	startDate = "20180621"
 	# 结束日期
@@ -258,11 +261,13 @@ if __name__ == "__main__":
 
 	print(f"保存购买信号......")
 	signalsDir = "long_short_signals"
-	df = pd.DataFrame({"行情地址": urls, "购买信号": signals, "上期信号": signalsOld, 
+	df = pd.DataFrame({"股票简称":names.values, "行情地址": urls, "购买信号": signals, "上期信号": signalsOld, 
 					   "上期备注": ['' for i in range(len(codes))], "备注": ['' for i in range(len(codes))]},
 					   index = pd.Index(codes.astype(int), name = "股票代码"))
 	df.sort_values(by = ["购买信号","上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
-	dfOld = pd.read_csv(f"{signalsDir}/signals_{endDateOld}.csv", index_col = 0, dtype = {"备注": str})
-	df["上期备注"] = dfOld["备注"]
-	df.to_csv(f"{signalsDir}/signals_{endDate}.csv")
+	try: 
+		dfOld = pd.read_csv(f"{signalsDir}/signals_{endDateOld}.csv", index_col = 0, dtype = {"备注": str})
+		df["上期备注"] = dfOld["备注"]
+	finally:
+		df.to_csv(f"{signalsDir}/signals_{endDate}.csv")
 
