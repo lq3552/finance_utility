@@ -2,6 +2,7 @@ import numpy as np
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import pandas as pd
+import mplfinance as mpf
 from DataAcquisitor import DataAcquisitor
 
 
@@ -68,11 +69,11 @@ class DataAnalyzer(object):
 			period: day - 0, week - 1 or month - 2
 		'''
 		if period in self.PeriodAlias[0]:
-			return self._dataAcquired.get_day_k()["收盘"]
+			return self._dataAcquired.get_day_k()["Close"]
 		elif period in self.PeriodAlias[1]:
-			return self._dataAcquired.get_week_k()["收盘"]
+			return self._dataAcquired.get_week_k()["Close"]
 		else:
-			return self._dataAcquired.get_month_k()["收盘"]
+			return self._dataAcquired.get_month_k()["Close"]
 
 	def get_moving_average(self, period) -> np.ndarray:
 		'''
@@ -160,15 +161,18 @@ class DataAnalyzer(object):
 		return 10000
 
 	def get_closing_price_today(self):
-		price = self._dataAcquired.get_day_k()["收盘"]
+		price = self.get_closing_price_history(0)
 		return price[price.shape[0] - 1]
 
 	def send_signal(self, maximumPrice) -> int:
-		if (self.get_closing_price_today() > maximumPrice): # at least 100 * maximumPrice RMB to buy in
+
+		priceClosing = self.get_closing_price_today()
+
+		if (priceClosing > maximumPrice): # at least 100 * maximumPrice RMB to buy in
 			return int(-maximumPrice)
 
 		# falling trend
-		if (self._MADay[5][-1] < self._MADay[60][-1]) or (self._MAWeek[5][-1] < self._MAWeek[60][-1]):
+		if (priceClosing < self._MADay[60][-1]) or (priceClosing < self._MAWeek[60][-1]):
 			if (self._derivativeTodayDay[5] > 0 and self._derivativeTodayWeek[5] > 0):
 				return self.WAIT
 			else:
@@ -184,34 +188,41 @@ class DataAnalyzer(object):
 			return self.WAIT
 		elif (self._derivativeTodayDay[20] > 0 and self._derivativeTodayWeek[20] > 0 and self._derivativeTodayMonth[20] <= 0):
 			# potential "terminal lucidity"
-			if(self.get_closing_price_today() < 0.94 * min(self._lastMaximumDayMA5, self._lastMaximumWeekMA5)):
+			if(priceClosing < 0.94 * min(self._lastMaximumDayMA5, self._lastMaximumWeekMA5)):
 				return self.WAIT
 			return self.RISING_SHORT
 		elif (self._derivativeTodayWeek[20] > 0 and self._derivativeTodayMonth[20] > 0):
 			# potential "terminal lucidity"
-			if(self.get_closing_price_today() < 1.0 * min(self._lastMaximumWeekMA5, self._lastMaximumMonthMA5)):
+			if(priceClosing < 1.0 * min(self._lastMaximumWeekMA5, self._lastMaximumMonthMA5)):
 				return self.WAIT
 			return self.RISING_LONG
 		# Noob, let's start with simple trends
 		else:
 			return self.WAIT
 
-	def plot_MA_and_K(self, period):
-		data = self.get_closing_price_history(period)
+	def plot_MA_and_K(self, period,ax = None):
 		MA = self.get_moving_average(period)
 		if period in self.PeriodAlias[0]:
-			period = "Day "
+			kHistory = self._dataAcquired.get_day_k()
+			period = " Day"
 		elif period in self.PeriodAlias[1]:
-			period = "Week "
+			kHistory = self._dataAcquired.get_week_k()
+			period = " Week"
 		else:
-			period = "Month "
+			kHistory = self._dataAcquired.get_month_k()
+			period = " Month"
 
-		fig, ax = plt.subplots()
-		windows = MA.keys()
-		ax.plot(data, label = period + "K") #TODO: skip market holidy date_time
-		for window in windows:
-			ax.plot(data.index[window - 1:], MA[window], label = "MA: " + str(window))
-		plt.legend()
+		windows = list(MA.keys())
+		mycolor=mpf.make_marketcolors(up="red",down="green",edge="i",wick="i",volume="in")
+		mystyle=mpf.make_mpf_style(marketcolors=mycolor,gridaxis="both",gridstyle="-.")
+		fig, axes = mpf.plot(kHistory, type = 'candle', mav = windows,
+							 volume = True, show_nontrading = False,
+							 style = mystyle,
+							 warn_too_much_data = 5215,
+							 returnfig = True)
+		axes[0].set_title(self._dataAcquired.get_code() + period,
+						  fontsize=16, style='normal', fontfamily='Helvetica',
+						  loc='center')
 		plt.show()
 		plt.close()
 
@@ -239,7 +250,6 @@ if __name__ == "__main__":
 	# 股票代码
 	codes = df[headerCode]
 	names = df[headerName]
-	print(names)
 	# 开始日期
 	startDate = "20180621"
 	# 结束日期
@@ -248,6 +258,7 @@ if __name__ == "__main__":
 	inDir     = "stock_price_data"
 
 	size = len(codes)
+
 	with Pool(nproc) as pool:
 		print(f"正在分析沪深300成分股的k线数据......")
 		signals, urls = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
@@ -271,3 +282,9 @@ if __name__ == "__main__":
 	finally:
 		df.to_csv(f"{signalsDir}/signals_{endDate}.csv")
 
+	# example candlestick plot
+	dataAcquisitor = DataAcquisitor("000157", startDate, endDate, False, 1, inDir = inDir)
+	dataAnalyzer = DataAnalyzer(dataAcquisitor)
+	dataAnalyzer.plot_MA_and_K("day")
+	dataAnalyzer.plot_MA_and_K("week")
+	dataAnalyzer.plot_MA_and_K("month")
