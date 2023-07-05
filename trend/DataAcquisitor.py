@@ -1,6 +1,7 @@
-from urllib.parse import urlencode
 import pandas as pd
 import pandas_market_calendars as pm_calendar
+import numpy as np
+from urllib.parse import urlencode
 import requests
 import os
 import copy
@@ -55,6 +56,8 @@ class DataAcquisitor(object):
 		self._secid = self._gen_secid(isIndex)
 		self._beg   = beg
 		self._end   = end
+		self._mode  = mode
+		self._XD    = False
 
 		self._outDir = outDir
 		if inDir == None:
@@ -62,9 +65,10 @@ class DataAcquisitor(object):
 		self._inDir = inDir
 		self.read_from_csv(mode)
 		if mode == 0:
-			self._dayK  = self._get_k_history(klt = 101)
+			_            = self._get_k_history(klt = 101, setXDFlag = True)
+			self._dayK   = self._get_k_history(klt = 101)
 			self._weekK  = self._get_k_history(klt = 102)
-			self._monthK  = self._get_k_history(klt = 103)
+			self._monthK = self._get_k_history(klt = 103)
 
 	def get_code(self) -> str:
 		'''
@@ -123,6 +127,8 @@ class DataAcquisitor(object):
 			self._monthK = copy.deepcopy(self.__emptyDataFrame)
 
 	def save_to_csv(self):
+		if self._mode == 1: # saving is not supported in the offline mode
+			return
 		if not os.path.exists(self._outDir):
 			os.makedirs(f"{self._outDir}")
 		self._dayK.to_csv(f"{self._outDir}/{self._code}_day.csv", encoding="utf-8-sig")
@@ -156,7 +162,7 @@ class DataAcquisitor(object):
 			# 沪市股票
 			return f'1.{self._code}'
 	
-	def _get_k_history(self, klt: int = 101, fqt: int = 1) -> pd.DataFrame:
+	def _get_k_history(self, klt: int = 101, fqt: int = 1, setXDFlag: bool = False) -> pd.DataFrame:
 		'''
 		功能获取k线数据
 		-
@@ -192,7 +198,9 @@ class DataAcquisitor(object):
 			end = pd.DatetimeIndex([self._end])[0]
 			if endOld > end:
 				return dfOld
-			beg = max(beg, endOld)
+			# if today is not ex-dividend day then there is no need to update everything before
+			if not self._XD: 
+				beg = max(beg, endOld)
 			# Check if the dates of new records are all holidays. If so, then there is no need to update.
 			marketCalendar = pm_calendar.get_calendar('XSHG').schedule(start_date = beg, end_date=end)
 			checkDate = beg + pd.Timedelta(days=1)
@@ -205,6 +213,12 @@ class DataAcquisitor(object):
 
 			beg = beg.strftime(self.__dateFormat)
 
+		# used to check ex-dividend day
+		if klt == 101 and setXDFlag == True:
+			if pd.isnull(dfOld.iloc[0,1]):
+				closePriceOld = np.nan
+			else:
+				closePriceOld = dfOld.iloc[-1,1]
 		# drop the last row, because it could be updated in the case of week/month K
 		dfOld.drop(dfOld.index[-1], inplace = True)
 
@@ -242,14 +256,22 @@ class DataAcquisitor(object):
 		klines = data['klines']
 
 		index = []
-		rows  = dfOld.to_numpy().tolist()
+		rows  = dfOld.loc[self._beg : self._end].to_numpy().tolist() if not self._XD else []
 		for _kline in klines:
 			kline = _kline.split(',')
 			index.append(kline[0])
 			rows.append(kline[1:])
 
+		# XD must be decided by dayK in the current version
+		if klt == 101 and setXDFlag == True:
+			# ex-dividend day encountered, must update everything before, only set the XD flag here!
+			if ~np.isnan(closePriceOld) and rows[-1][1] != closePriceOld:
+				self._XD = True
+				return copy.deepcopy(self.__emptyDataFrame)
+
 		index = pd.DatetimeIndex(index)
-		index = pd.DatetimeIndex([*dfOld.index, *index])
+		if not self._XD:
+			index = pd.DatetimeIndex([*dfOld.index, *index])
 	
 		df = pd.DataFrame(rows, columns = self.__columns, index = index)
 
@@ -260,9 +282,9 @@ def acquire_and_save_stock_data(code: str, startDate: str, endDate: str, outDir:
 	print(f"正在获取 {code} 从 {startDate} 到 {endDate} 的 k线数据......")
 	# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
 	dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 0, outDir = outDir)
-	dataAcquisitor.save_to_csv()
 	# 保存k线数据到表格里面
 	print(f"股票代码：{code} 的 k线数据已保存到指定目录 {outDir} 下的csv 文件中")
+	dataAcquisitor.save_to_csv()
 
 def acquire_and_save_stock_data_multiprocess(param):
 	try:
@@ -289,9 +311,13 @@ if __name__ == "__main__":
 	# 输出路径
 	outDir    = "stock_price_data"
 
+	dataAcquisitor = DataAcquisitor("601088", startDate, endDate, False, 0, outDir = outDir)
+	dataAcquisitor.save_to_csv()
+	'''
 	size = len(codes)
 	with Pool(nproc) as pool:
 		result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
 					  zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
 					  total = size))
 		pool.close()
+	'''
