@@ -311,13 +311,10 @@ if __name__ == "__main__":
 	# 输出路径
 	outDir    = "stock_price_data"
 
-	dataAcquisitor = DataAcquisitor("601088", startDate, endDate, False, 0, outDir = outDir)
-	dataAcquisitor.save_to_csv()
-	'''
 	size = len(codes)
 	with Pool(nproc) as pool:
 		result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
 					  zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
 					  total = size))
 		pool.close()
-	'''
+	
