@@ -65,10 +65,11 @@ class DataAcquisitor(object):
 		self._inDir = inDir
 		self.read_from_csv(mode)
 		if mode == 0:
-			_            = self._get_k_history(klt = 101, setXDFlag = True)
+			self._dayK   = self._get_k_history(klt = 101, setXDFlag = True)
 			self._dayK   = self._get_k_history(klt = 101)
 			self._weekK  = self._get_k_history(klt = 102)
 			self._monthK = self._get_k_history(klt = 103)
+			self._hourK  = self._get_k_history(klt = 60)
 
 	def get_code(self) -> str:
 		'''
@@ -93,10 +94,15 @@ class DataAcquisitor(object):
 	
 	def get_day_k(self) -> pd.DataFrame:
 		return self._dayK 
+
 	def get_week_k(self) -> pd.DataFrame:
 		return self._weekK 
+
 	def get_month_k(self) -> pd.DataFrame:
 		return self._monthK 
+
+	def get_hour_k(self) -> pd.DataFrame:
+		return self._hourK 
 
 	def read_from_csv(self, mode: int):
 		'''
@@ -117,14 +123,17 @@ class DataAcquisitor(object):
 									   parse_dates = [0], index_col = 0).loc[beg : end]
 			self._monthK = pd.read_csv(f"{self._inDir}/{self._code}_month.csv", encoding="utf-8-sig",
 									   parse_dates = [0], index_col = 0).loc[beg : end]
+			self._hourK  = pd.read_csv(f"{self._inDir}/{self._code}_hour.csv", encoding="utf-8-sig",
+									   parse_dates = [0], index_col = 0).loc[beg : end]
 
-			if self._dayK.empty or self._weekK.empty or self._monthK.empty:
+			if self._dayK.empty or self._weekK.empty or self._monthK.empty or self._hourK.empty:
 				raise self.UnsupportedDataFrameError()
 
 		except (FileNotFoundError, self.UnsupportedDataFrameError):
 			self._dayK   = copy.deepcopy(self.__emptyDataFrame)
 			self._weekK  = copy.deepcopy(self.__emptyDataFrame)
 			self._monthK = copy.deepcopy(self.__emptyDataFrame)
+			self._hourK  = copy.deepcopy(self.__emptyDataFrame)
 
 	def save_to_csv(self):
 		if self._mode == 1: # saving is not supported in the offline mode
@@ -134,6 +143,7 @@ class DataAcquisitor(object):
 		self._dayK.to_csv(f"{self._outDir}/{self._code}_day.csv", encoding="utf-8-sig")
 		self._weekK.to_csv(f"{self._outDir}/{self._code}_week.csv", encoding="utf-8-sig")
 		self._monthK.to_csv(f"{self._outDir}/{self._code}_month.csv", encoding="utf-8-sig")
+		self._hourK.to_csv(f"{self._outDir}/{self._code}_hour.csv", encoding="utf-8-sig")
 
 	def _gen_secid(self, isIndex: bool) -> str:
 		'''
@@ -185,6 +195,8 @@ class DataAcquisitor(object):
 			dfOld = self._weekK
 		elif klt == 103:
 			dfOld = self._monthK
+		elif klt == 60:
+			dfOld = self._hourK
 		else: # unsupported
 			return copy.deepcopy(self.__emptyDataFrame)
 
@@ -264,7 +276,8 @@ class DataAcquisitor(object):
 
 		# XD must be decided by dayK in the current version
 		if klt == 101 and setXDFlag == True:
-			# ex-dividend day encountered, must update everything before, only set the XD flag here!
+			# ex-dividend day encountered, must update everything before, only set the XD flag here
+			# limitation: DataAcquisitor has to be run every day, otherwise it is guaranteed re-download the table!
 			if ~np.isnan(closePriceOld) and rows[-1][1] != closePriceOld:
 				self._XD = True
 				return copy.deepcopy(self.__emptyDataFrame)
@@ -317,4 +330,3 @@ if __name__ == "__main__":
 					  zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
 					  total = size))
 		pool.close()
-	
