@@ -278,7 +278,7 @@ if __name__ == "__main__":
 	import itertools
 	from tqdm.auto import tqdm
 
-	df = pd.read_csv('stock_codes/CSI300_component_codes.csv', dtype = {0: str})
+	df = pd.read_csv('stock_codes/CSI300_component_codes_ex_BFRE.csv', dtype = {0: str})
 	headerCode = df.columns[0]
 	headerName = df.columns[1]
 	# 股票代码
