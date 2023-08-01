@@ -311,10 +311,11 @@ if __name__ == "__main__":
 	signalsDir = "long_short_signals"
 	df = pd.DataFrame({"股票简称":names.values, "行情地址": urls, "购买信号": signals, "上期信号": signalsOld, 
 					   "上期备注": ['' for i in range(len(codes))], "备注": ['' for i in range(len(codes))]},
-					   index = pd.Index(codes.astype(int), name = "股票代码"))
+					   index = pd.Index(codes, name = "股票代码"))
 	df.sort_values(by = ["购买信号","上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
 	try: 
-		dfOld = pd.read_csv(f"{signalsDir}/signals_{endDateOld}.csv", index_col = 0, dtype = {"备注": str})
+		dfOld = pd.read_csv(f"{signalsDir}/signals_{endDateOld}.csv", dtype = {"股票代码": str, "备注": str})
+		dfOld.set_index("股票代码", inplace=True)
 		df["上期备注"] = dfOld["备注"]
 	except:
 		print("You must be too lazy to analyze stock price data every business day :(")
