@@ -68,7 +68,7 @@ class DataAnalyzer(object):
 									 60: self.compute_derivative_today(1, 60, stencil = 1)}
 		self._derivativeTodayMonth = {20: self.compute_derivative_today(2, 20, stencil = 1)}
 		self._derivativeTodayHour  = {3: self.compute_derivative_today(3, 3, stencil = 2),
-			                          5: self.compute_derivative_today(3, 3, stencil = 2),
+			                          5: self.compute_derivative_today(3, 5, stencil = 2),
 									 20: self.compute_derivative_today(3, 20, stencil = 2),
 									 60: self.compute_derivative_today(3, 60, stencil = 1)}
 
@@ -206,7 +206,7 @@ class DataAnalyzer(object):
 			return self.WAIT # check this criteria!!! Usually in order to make a rising trend, MAs of the shortest period should follow MA5 >= MA60
 		# downturn of trend
 		if MA[5][-1] < MA[20][-1]:
-			if dMA[5] < 0 and dMA[20] < 0:
+			if dMA[20] < 0:
 				return self.SELL
 		if length == "long" and self.get_closing_price_today() < MA[20][-1]:
 			return self._check_MA_trend("short")
