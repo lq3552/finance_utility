@@ -18,7 +18,6 @@ class DataAnalyzer(object):
 	WAIT         = 0
 	RISING_SHORT = 1
 	RISING_LONG  = 2
-	RISING_LONG  = 2
 	PeriodAlias = [[0, "d", "D", "Day", "day"],
 				   [1, "w", "W",  "Week", "week"],
 				   [2, "m", "M", "Month", "month"],
@@ -62,15 +61,16 @@ class DataAnalyzer(object):
         # simply approximate derivatives f today's trends by finite difference of MAs
 		self._derivativeTodayDay   = {3: self.compute_derivative_today(0, 3, stencil = 2),
 									  5: self.compute_derivative_today(0, 5, stencil = 2),
-									 20: self.compute_derivative_today(0, 20, stencil = 2),
-									 60: self.compute_derivative_today(0, 60, stencil = 2)}
+									 20: self.compute_derivative_today(0, 20, stencil = 1),
+									 60: self.compute_derivative_today(0, 60, stencil = 1)}
 		self._derivativeTodayWeek  = {5: self.compute_derivative_today(1, 5, stencil = 1),
 									 20: self.compute_derivative_today(1, 20, stencil = 1),
 									 60: self.compute_derivative_today(1, 60, stencil = 1)}
 		self._derivativeTodayMonth = {20: self.compute_derivative_today(2, 20, stencil = 1)}
 		self._derivativeTodayHour  = {3: self.compute_derivative_today(3, 3, stencil = 2),
+			                          5: self.compute_derivative_today(3, 3, stencil = 2),
 									 20: self.compute_derivative_today(3, 20, stencil = 2),
-									 60: self.compute_derivative_today(3, 60, stencil = 2)}
+									 60: self.compute_derivative_today(3, 60, stencil = 1)}
 
 	def get_data_acquired(self) -> DataAcquisitor :
 		'''
@@ -92,19 +92,9 @@ class DataAnalyzer(object):
 		else:
 			return self._dataAcquired.get_hour_k()["Close"]
 
-	def get_moving_average(self, period) -> np.ndarray:
-		'''
-		param:
-			period: day - 0, week - 1, month - 2, hour - 3
-		'''
-		if period in self.PeriodAlias[0]:
-			return self._MADay
-		elif period in self.PeriodAlias[1]:
-			return self._MAWeek
-		elif period in self.PeriodAlias[2]:
-			return self._MAMonth
-		else:
-			return self._MAHour
+	def get_closing_price_today(self):
+		price = self.get_closing_price_history(0)
+		return price[price.shape[0] - 1]
 
 	def compute_moving_average(self, period, window: int) -> np.ndarray: # for now I just assume we have enough data, otherwise simply skip
 		'''
@@ -122,6 +112,21 @@ class DataAnalyzer(object):
 		except:
 			return np.zeros(1)
 
+	def get_moving_average(self, period) -> np.ndarray:
+		'''
+		param:
+			period: day - 0, week - 1, month - 2, hour - 3
+		'''
+		if period in self.PeriodAlias[0]:
+			return self._MADay
+		elif period in self.PeriodAlias[1]:
+			return self._MAWeek
+		elif period in self.PeriodAlias[2]:
+			return self._MAMonth
+		else:
+			return self._MAHour
+
+
 	def compute_smoothed_MA5(self, period, window: int, deriv: int = 0, **kwargs) -> np.ndarray:
 		'''
 		smooth data using a cubic Savitzky–Golay filter
@@ -134,16 +139,6 @@ class DataAnalyzer(object):
 		data = self.get_moving_average(period)[5]
 		return savgol_filter(data, window, 3, deriv, **kwargs)
 
-	def get_derivative_today(self, period):
-		if period in self.PeriodAlias[0]:
-			return self._derivativeTodayDay
-		elif period in self.PeriodAlias[1]:
-			return self._derivativeTodayWeek
-		elif period in self.PeriodAlias[2]:
-			return self._derivativeTodayMonth
-		else:
-			return self._derivativeTodayHour
-
 	def compute_derivative_today(self, period, window: int, stencil: int = 2) -> np.float64:
 		'''
 		param:
@@ -155,17 +150,17 @@ class DataAnalyzer(object):
 		except:
 			return 0.0
 
-	def get_historical_maximum_closest_to_today(self, period) -> np.float32:
+	def get_derivative_today(self, period):
 		if period in self.PeriodAlias[0]:
-			return self._lastMaximumDayMA5
+			return self._derivativeTodayDay
 		elif period in self.PeriodAlias[1]:
-			return self._lastMaximumWeekMA5
+			return self._derivativeTodayWeek
 		elif period in self.PeriodAlias[2]:
-			return self._lastMaximumMonthMA5
+			return self._derivativeTodayMonth
 		else:
-			return self._lastMaximumHourMA5
+			return self._derivativeTodayHour
 
-	def compute_historical_maximum_closest_to_today(self, period) -> np.float32:
+	def compute_historical_maximum_closest_to_today(self, period) -> np.float64:
 		'''
 		param:
 			period: day - 0, week - 1 or month - 2
@@ -184,32 +179,48 @@ class DataAnalyzer(object):
 				return MA5[i]
 		return 10000
 
-	def get_closing_price_today(self):
-		price = self.get_closing_price_history(0)
-		return price[price.shape[0] - 1]
+	def get_historical_maximum_closest_to_today(self, period) -> np.float64:
+		if period in self.PeriodAlias[0]:
+			return self._lastMaximumDayMA5
+		elif period in self.PeriodAlias[1]:
+			return self._lastMaximumWeekMA5
+		elif period in self.PeriodAlias[2]:
+			return self._lastMaximumMonthMA5
+		else:
+			return self._lastMaximumHourMA5
 
-	def send_signal(self, maximumPrice) -> int:
+	def _check_MA_trend(self, length: str) -> int:
+		if length == "short":
+			MA = self.get_moving_average("Hour")
+			dMA = self.get_derivative_today("Hour")
+		else:
+			MA = self.get_moving_average("Day")
+			dMA = self.get_derivative_today("Day")
 
+		# falling trend
+		if MA[3][-1] < MA[60][-1]:
+			if dMA[3] < 0:
+				if dMA[60] < 0:
+					return self.EMPTY
+				return self.SELL
+			return self.WAIT # check this criteria!!! Usually in order to make a rising trend, MAs of the shortest period should follow MA5 >= MA60
+		# downturn of trend
+		if MA[5][-1] < MA[20][-1]:
+			if dMA[5] < 0 and dMA[20] < 0:
+				return self.SELL
+		if length == "long" and self.get_closing_price_today() < MA[20][-1]:
+			return self._check_MA_trend("short")
+		# rising trend
+		return self.RISING_SHORT if length == "short" else self.RISING_LONG
+
+	def send_signal(self, priceLimit) -> int:
 		priceClosing = self.get_closing_price_today()
-
-		if (priceClosing > maximumPrice): # at least 100 * maximumPrice RMB to buy in
-			return int(-maximumPrice)
+		if (priceClosing > priceLimit): # at most 100 * priceLimit RMB to buy in
+			return int(-priceLimit)
 
 		### short term
 		if self._derivativeTodayDay[20] >= 0 and self._derivativeTodayWeek[20] >= 0 and self._derivativeTodayMonth[20] < 0:
-			# potential "terminal lucidity"
-			# if(priceClosing < 0.94 * self._lastMaximumDayMA5):
-				# return self.WAIT
-			# falling trend
-			if priceClosing < self._MAHour[60][-1]:
-				if self._derivativeTodayHour[3] > 0:
-					return self.WAIT
-				else:
-					return self.EMPTY
-			# downturn of trend
-			if self._derivativeTodayHour[3] < 0 and self._derivativeTodayHour[20] < 0 and self._MAHour[3][-1] < self._MAHour[20][-1]:
-				return self.SELL
-			return self.RISING_SHORT
+			return self._check_MA_trend("short")
 		### long term
 		elif (self._derivativeTodayWeek[20] >= 0 and self._derivativeTodayMonth[20] >= 0):
 			# potential "terminal lucidity"
@@ -217,16 +228,7 @@ class DataAnalyzer(object):
 				# if priceClosing >= 0.94 * self._lastMaximumDayMA5:
 					# return self.RISING_SHORT
 				# return self.WAIT
-			# falling trend
-			if priceClosing < self._MADay[60][-1]:
-				if self._derivativeTodayDay[3] > 0:
-					return self.WAIT
-				else:
-					return self.EMPTY
-			# downturn of trend
-			if self._derivativeTodayDay[3] < 0 and self._derivativeTodayDay[20] < 0 and self._MADay[3][-1] < self._MADay[20][-1]:
-				return self.SELL
-			return self.RISING_LONG
+			return self._check_MA_trend("long")
 		# Noob, let's start with simple trends
 		else:
 			return self.WAIT
@@ -261,10 +263,10 @@ class DataAnalyzer(object):
 		plt.close()
 
 
-def analyze_stock_data(code: str, startDate: str, endDate: str, inDir: str):
+def analyze_stock_data(code: str, startDate: str, endDate: str, inDir: str, priceLimit: np.float64):
 	dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 1, inDir = inDir)
 	dataAnalyzer = DataAnalyzer(dataAcquisitor)
-	signal = dataAnalyzer.send_signal(60)
+	signal = dataAnalyzer.send_signal(priceLimit)
 	url   = dataAnalyzer.get_data_acquired().get_quotation_url()
 	return signal, url
 
@@ -290,12 +292,14 @@ if __name__ == "__main__":
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
 	# 输入路径
 	inDir     = "stock_price_data"
+	# 价格限制
+	priceLimit = 90.0
 
 	size = len(codes)
 	with Pool(nproc) as pool:
 		print(f"正在分析沪深300成分股的k线数据......")
 		signals, urls = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
-							zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(inDir))),
+							zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(inDir), itertools.repeat(priceLimit))),
 							total = size))
 		marketCalendar = pm_calendar.get_calendar('XSHG').schedule(start_date = startDate, end_date = endDate)
 		endDateOld = pd.to_datetime(endDate) - pd.Timedelta(days=1)
@@ -303,7 +307,7 @@ if __name__ == "__main__":
 			endDateOld = endDateOld - pd.Timedelta(days=1)
 		endDateOld = endDateOld.strftime("%Y%m%d")
 		signalsOld, _ = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
-							zip(codes, itertools.repeat(startDate), itertools.repeat(endDateOld), itertools.repeat(inDir))),
+							zip(codes, itertools.repeat(startDate), itertools.repeat(endDateOld), itertools.repeat(inDir), itertools.repeat(priceLimit))),
 							total = size))
 		pool.close()
 
