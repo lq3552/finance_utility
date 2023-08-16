@@ -146,7 +146,7 @@ class DataAnalyzer(object):
 		'''
 		MA = self.get_moving_average(period)[window]
 		try:
-			return np.round((MA[-1] - MA[-1 - stencil]) / stencil, 2)
+			return np.round((MA[-1] - MA[-1 - stencil]) / stencil, 3)
 		except:
 			return 0.0
 
