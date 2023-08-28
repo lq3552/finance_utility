@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
@@ -16,8 +17,9 @@ class DataAnalyzer(object):
 	EMPTY        = -2
 	SELL         = -1
 	WAIT         = 0
-	RISING_SHORT = 1
-	RISING_LONG  = 2
+	SELL_OR_HESITATE = 1
+	RISING_SHORT = 2
+	RISING_LONG  = 3
 	PeriodAlias = [[0, "d", "D", "Day", "day"],
 				   [1, "w", "W",  "Week", "week"],
 				   [2, "m", "M", "Month", "month"],
@@ -209,7 +211,8 @@ class DataAnalyzer(object):
 			if dMA[20] < 0:
 				return self.SELL
 		if length == "long" and self.get_closing_price_today() < MA[20][-1]:
-			return self._check_MA_trend("short")
+			if self._check_MA_trend("short") <= 0:
+				return self.SELL_OR_HESITATE
 		# rising trend
 		return self.RISING_SHORT if length == "short" else self.RISING_LONG
 
@@ -292,6 +295,8 @@ if __name__ == "__main__":
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
 	# 输入路径
 	inDir     = "stock_price_data"
+	# 保存路径
+	signalsDir = "long_short_signals"
 	# 价格限制
 	priceLimit = 90.0
 
@@ -304,6 +309,8 @@ if __name__ == "__main__":
 		marketCalendar = pm_calendar.get_calendar('XSHG').schedule(start_date = startDate, end_date = endDate)
 		endDateOld = pd.to_datetime(endDate) - pd.Timedelta(days=1)
 		while not endDateOld in marketCalendar.index:
+			if os.path.exists(f"{signalsDir}/signals_{endDateOld.strftime('%Y%m%d')}.csv"):
+				break
 			endDateOld = endDateOld - pd.Timedelta(days=1)
 		endDateOld = endDateOld.strftime("%Y%m%d")
 		signalsOld, _ = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
@@ -312,7 +319,6 @@ if __name__ == "__main__":
 		pool.close()
 
 	print(f"保存购买信号......")
-	signalsDir = "long_short_signals"
 	df = pd.DataFrame({"股票简称":names.values, "行情地址": urls, "购买信号": signals, "上期信号": signalsOld, 
 					   "上期备注": ['' for i in range(len(codes))], "备注": ['' for i in range(len(codes))]},
 					   index = pd.Index(codes, name = "股票代码"))
