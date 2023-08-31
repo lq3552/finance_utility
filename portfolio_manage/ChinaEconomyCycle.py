@@ -3,17 +3,17 @@ import statsmodels.api as sm
 import scipy.stats as stats
 
 class ChinaEconomyCycle(object):
-	def __init__(self, file_pmi, file_ppi):
+	def __init__(self, file_pmi = "economy_data/China_Composite_PMI.txt", file_ppi = "economy_data/China_PPI.txt", file_pmi_sec = "economy_data/China_Sector_PMI.txt"):
 		dat_pmi = np.loadtxt(file_pmi)
 		dat_ppi = np.loadtxt(file_ppi)
+		dat_pmi_sec = np.loadtxt(file_pmi_sec)
 		self.t = dat_pmi[:,0]
 		self.t = self.t // 100 + (self.t % 100 - 1) / 12
-		self.pmi_2nd  = dat_pmi[:,1]
-		self.pmi_else = dat_pmi[:,3]
-		second_total_ratio = 1.0
-		self.pmi = second_total_ratio * self.pmi_2nd + (1 - second_total_ratio) * self.pmi_else
+		self.pmi_2nd  = dat_pmi_sec[:,1]
+		self.pmi_else = dat_pmi_sec[:,3]
+		self.pmi = dat_pmi[:,1]
 		self.pmi = (self.pmi - 50.0) * 2
-		self.ppi = dat_ppi[:,2]
+		self.ppi = dat_ppi[:self.pmi.shape[0],2]
 
 	def HP_filter(self, lamb):
 		'''
@@ -35,15 +35,14 @@ if __name__ == "__main__":
 	import matplotlib.pyplot as plt
 	from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 
-	cec = ChinaEconomyCycle("economy_data/China_PMI.txt",
-			"economy_data/China_PPI.txt")
+	cec = ChinaEconomyCycle()
 	cec.correlate_pmi_2nd_and_else()
 	pmi_cycle, pmi_trend, ppi_cycle, ppi_trend = cec.HP_filter(lamb = 100)
 	dpmi_trend = pmi_trend[:-1] - pmi_trend[1:]
 	dppi_trend = ppi_trend[:-1] - ppi_trend[1:]
 
 	fig, ax = plt.subplots(nrows = 2, ncols = 2, sharex = True)
-	ax[0,0].plot(cec.t, pmi_trend, ls = "-", color = "C0", label = "Manufacture PMI - Pressure")
+	ax[0,0].plot(cec.t, pmi_trend, ls = "-", color = "C0", label = "Composite PMI - Pressure")
 	ax[0,0].plot(cec.t, ppi_trend, ls = "-", color = "C1", label = "PPI - Resistance")
 	ax[0,0].plot(cec.t, cec.pmi, ls = "--", marker = "", color = "C0")
 	ax[0,0].plot(cec.t, cec.ppi, ls = "--", marker = "", color = "C1")
