@@ -48,17 +48,20 @@ if __name__ == "__main__":
 	ax[0,0].plot(cec.t, cec.ppi, ls = "--", marker = "", color = "C1")
 	ax[0,0].xaxis.set_minor_locator(MultipleLocator(0.25))
 	ax[0,0].xaxis.set_major_locator(MultipleLocator(1))
+	ax[0,0].set_ylabel("Index")
 	ax[0,0].legend()
 
 	ax[0,1].plot(cec.t[1:], dpmi_trend, ls = "-", color = "C0")
 	ax[0,1].plot(cec.t[1:], dppi_trend, ls = "-", color = "C1")
 	ax[0,1].xaxis.set_minor_locator(MultipleLocator(0.25))
 	ax[0,1].xaxis.set_major_locator(MultipleLocator(1))
+	ax[0,1].set_ylabel("Index Change")
 
 	ax[1,1].plot(cec.t[1:], np.sign(dpmi_trend), ls = "", marker = "o", color = "C0")
 	ax[1,1].plot(cec.t[1:], np.sign(dppi_trend), ls = "", marker = "o", color = "C1")
 	ax[1,1].xaxis.set_minor_locator(MultipleLocator(0.25))
 	ax[1,1].xaxis.set_major_locator(MultipleLocator(1))
+	ax[1,1].set_ylabel("Index Change Sign")
 
 
 	stage = np.zeros_like(dpmi_trend)
@@ -70,4 +73,5 @@ if __name__ == "__main__":
 	ax[1,0].plot(cec.t[1:], stage, ls = "-", marker = "o", color = "C2")
 	ax[1,0].xaxis.set_minor_locator(MultipleLocator(0.25))
 	ax[1,0].xaxis.set_major_locator(MultipleLocator(1))
+	ax[1,0].set_ylabel("Stage")
 	plt.show()
