@@ -318,7 +318,7 @@ if __name__ == "__main__":
 	# 股票代码
 	codes = df[header]
 	# 开始日期
-	startDate = "20180621"
+	startDate = "20190621"
 	# 结束日期
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
 	# 输出路径
