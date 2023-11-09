@@ -61,6 +61,7 @@ if __name__ == "__main__":
 	ax[1,1].plot(cec.t[1:], np.sign(dppi_trend), ls = "", marker = "o", color = "C1")
 	ax[1,1].xaxis.set_minor_locator(MultipleLocator(0.25))
 	ax[1,1].xaxis.set_major_locator(MultipleLocator(1))
+	ax[1,1].yaxis.set_major_locator(MultipleLocator(1))
 	ax[1,1].set_ylabel("Index Change Sign")
 
 
@@ -73,5 +74,6 @@ if __name__ == "__main__":
 	ax[1,0].plot(cec.t[1:], stage, ls = "-", marker = "o", color = "C2")
 	ax[1,0].xaxis.set_minor_locator(MultipleLocator(0.25))
 	ax[1,0].xaxis.set_major_locator(MultipleLocator(1))
+	ax[1,0].yaxis.set_major_locator(MultipleLocator(1))
 	ax[1,0].set_ylabel("Stage")
 	plt.show()
