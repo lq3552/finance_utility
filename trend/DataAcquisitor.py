@@ -11,6 +11,7 @@ class DataAcquisitor(object):
 
 	'''
 	静态成员，东方财富网爬取数据相关变量
+	参考：Micro-sheep https://zhuanlan.zhihu.com/p/350578719
 	'''
 	__EastmoneyKlines = {
         'f51': 'Date',
