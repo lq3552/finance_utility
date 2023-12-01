@@ -17,7 +17,7 @@ class CashFlowAllocatorTernary(object):
 		self.asset2 = asset2
 		self.asset3 = asset3
 
-	def allocate(self, cashFlow) -> tuple[np.float64, np.float64, np.float64]:
+	def __call__(self, cashFlow) -> tuple[np.float64, np.float64, np.float64]:
 		try: # for now, ratio12 must not be Inf, ratio13 can be Inf
 			sumNew = self.asset1 + self.asset2 + self.asset3 + cashFlow
 			assetNew2 = sumNew / (self.ratio12 + 1.0 + self.ratio12 / self.ratio13) 
@@ -35,11 +35,30 @@ class CashFlowAllocatorTernary(object):
 
 
 if __name__ == "__main__":
-	asset1 = 0.0
-	asset2 = 1.5
-	asset3 = 1.0
-	cashAllocator = CashFlowAllocatorTernary(asset1, asset2, asset3, ratio12 = 2. / 3., ratio13 = 2.0)
-	allocation = cashAllocator.allocate(6.5)
-	print("CF = ", allocation)
-	print("Asset = ", (asset1 + allocation[0], asset2 + allocation[1], asset3 + allocation[2]))
+	'''
+	Here is an example of application:
+	(1) We have a total cashFlow
+	(2) We split it into cashFlowPrimary and cashFlowSecondary
+	(3) For we plan to invest cashFlowPrimary into EMU stock and 
+	    EMU intermediate bond, the ratio is 2:3
+	(4) But we don't actually invest the cash cash flow into EMU Stock,
+	    instead, this amount will be added to cashFlowSecondary
+	(5) Then we invest cashFlowSecondary into EMU ultra-short bond and
+	    short bond, the ratio is 1:1
+	'''
+	cashFlowPrimary   = 300.0
+	cashFlowSecondary = 200.0
 
+	emuStock = (100 + 50 / 40) * 41
+	emuBond  = 6543
+	cashAllocator = CashFlowAllocatorTernary(emuStock, emuBond, asset3 = 0, ratio12 = 2. / 3.)
+	allocationPrimary = cashAllocator(cashFlowPrimary)
+
+	emuUltrashortBond = 2345
+	emuShortBond = 2435
+	cashAllocator = CashFlowAllocatorTernary(emuUltrashortBond, emuShortBond, asset3 = 0, ratio12 = 1)
+	allocationSecondary = cashAllocator(cashFlowSecondary + allocationPrimary[0])
+
+	allocation = (allocationPrimary[1], allocationSecondary[0], allocationSecondary[1])
+	print("(EMU Intermediate Bond, EMU Ultrashort Bond, EMU Short Bond) = ", allocation)
+	print("(EMU Stock Equivalent) = ", allocationPrimary[0])
