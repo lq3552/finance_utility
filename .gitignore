@@ -156,6 +156,7 @@ cython_debug/
 !stock_codes
 *.csv
 *.numbers*
+foundamental/
 
 #system
 .DS_Store
