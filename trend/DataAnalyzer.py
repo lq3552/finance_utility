@@ -47,19 +47,19 @@ class DataAnalyzer(object):
 					     5: self.compute_moving_average(3, 5),
 					    20: self.compute_moving_average(3, 20),
 					    60: self.compute_moving_average(3, 60)}
-		self._smoothedDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 0)
-		self._smoothedWeekMA5  = self.compute_smoothed_MA5(1, 11, deriv = 0)
-		self._smoothedMonthMA5 = self.compute_smoothed_MA5(2, 11, deriv = 0)
-		self._smoothedHourMA5  = self.compute_smoothed_MA5(3, 11, deriv = 0)
+#		self._smoothedDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 0)
+#		self._smoothedWeekMA5  = self.compute_smoothed_MA5(1, 11, deriv = 0)
+#		self._smoothedMonthMA5 = self.compute_smoothed_MA5(2, 11, deriv = 0)
+#		self._smoothedHourMA5  = self.compute_smoothed_MA5(3, 11, deriv = 0)
         # smoothed derivatives is used to find local extrema
-		self._smoothedDerivativeDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 1)
-		self._smoothedDerivativeWeekMA5  = self.compute_smoothed_MA5(1, 11, deriv = 1)
-		self._smoothedDerivativeMonthMA5 = self.compute_smoothed_MA5(2, 11, deriv = 1)
-		self._smoothedDerivativeHourMA5  = self.compute_smoothed_MA5(3, 11, deriv = 1)
-		self._lastMaximumDayMA5   = self.compute_historical_maximum_closest_to_today(0)
-		self._lastMaximumWeekMA5  = self.compute_historical_maximum_closest_to_today(1)
-		self._lastMaximumMonthMA5 = self.compute_historical_maximum_closest_to_today(2)
-		self._lastMaximumHourMA5  = self.compute_historical_maximum_closest_to_today(3)
+#		self._smoothedDerivativeDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 1)
+#		self._smoothedDerivativeWeekMA5  = self.compute_smoothed_MA5(1, 11, deriv = 1)
+#		self._smoothedDerivativeMonthMA5 = self.compute_smoothed_MA5(2, 11, deriv = 1)
+#		self._smoothedDerivativeHourMA5  = self.compute_smoothed_MA5(3, 11, deriv = 1)
+#		self._lastMaximumDayMA5   = self.compute_historical_maximum_closest_to_today(0)
+#		self._lastMaximumWeekMA5  = self.compute_historical_maximum_closest_to_today(1)
+#		self._lastMaximumMonthMA5 = self.compute_historical_maximum_closest_to_today(2)
+#		self._lastMaximumHourMA5  = self.compute_historical_maximum_closest_to_today(3)
         # simply approximate derivatives f today's trends by finite difference of MAs
 		self._derivativeTodayDay   = {3: self.compute_derivative_today(0, 3, stencil = 2),
 									  5: self.compute_derivative_today(0, 5, stencil = 2),
@@ -139,6 +139,7 @@ class DataAnalyzer(object):
 			deriv: n-th derivative
 		'''
 		data = self.get_moving_average(period)[5]
+#		print(self._dataAcquired.get_code(),period,window,len(data))
 		return savgol_filter(data, window, 3, deriv, **kwargs)
 
 	def compute_derivative_today(self, period, window: int, stencil: int = 2) -> np.float64:
@@ -290,7 +291,7 @@ if __name__ == "__main__":
 	codes = df[headerCode]
 	names = df[headerName]
 	# 开始日期
-	startDate = "20180621"
+	startDate = "20190621"
 	# 结束日期
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
 	# 输入路径
@@ -298,7 +299,7 @@ if __name__ == "__main__":
 	# 保存路径
 	signalsDir = "long_short_signals"
 	# 价格限制
-	priceLimit = 90.0
+	priceLimit = 100.0
 
 	size = len(codes)
 	with Pool(nproc) as pool:
