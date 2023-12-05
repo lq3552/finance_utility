@@ -291,7 +291,7 @@ if __name__ == "__main__":
 	codes = df[headerCode]
 	names = df[headerName]
 	# 开始日期
-	startDate = "20190621"
+	startDate = "20180621"
 	# 结束日期
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
 	# 输入路径
