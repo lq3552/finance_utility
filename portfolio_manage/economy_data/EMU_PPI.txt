@@ -1,4 +1,6 @@
+#source: Eurostat https://ec.europa.eu/eurostat/
 #Month  actual forecast
+202310  -9.4   -9.5
 202309  -12.4  -12.5
 202308  -11.5  -11.6
 202307  -7.6  -7.6

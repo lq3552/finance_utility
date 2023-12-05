@@ -1,3 +1,5 @@
+#source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
+202311  49.4  2.92  50.2  7.49
 202310  49.5  0.61  50.6  3.90
 202309  50.2  0.20  51.7  2.17
 202308  49.7  0.61  51.0  -3.04
