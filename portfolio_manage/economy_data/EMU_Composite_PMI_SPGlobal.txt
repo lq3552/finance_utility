@@ -1,5 +1,6 @@
 #source: S&P Global https://www.pmi.spglobal.com/public
 #Month  Actual  Previous
+202312  47.6  47.6
 202311  47.6  46.5
 202310  46.5  47.2
 202309  47.2  46.7
