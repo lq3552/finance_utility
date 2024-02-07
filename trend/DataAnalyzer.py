@@ -14,12 +14,13 @@ class DataAnalyzer(object):
 	'''
 
 	# class-level (static) members
-	EMPTY        = -2
-	SELL         = -1
-	WAIT         = 0
+	IGNORE           = -3
+	EMPTY            = -2
+	SELL             = -1
+	SPECULATE        = 0
 	SELL_OR_HESITATE = 1
-	RISING_SHORT = 2
-	RISING_LONG  = 3
+	RISING_SHORT     = 2
+	RISING_LONG      = 3
 	PeriodAlias = [[0, "d", "D", "Day", "day"],
 				   [1, "w", "W",  "Week", "week"],
 				   [2, "m", "M", "Month", "month"],
@@ -31,8 +32,7 @@ class DataAnalyzer(object):
 			dataAcquired: DataAcquisitor containing the stock data
 		'''
 		self._dataAcquired = dataAcquired
-		self._MADay   = {3: self.compute_moving_average(0, 3),
-						 5: self.compute_moving_average(0, 5),
+		self._MADay   = {5: self.compute_moving_average(0, 5),
 					    10: self.compute_moving_average(0, 10),
 					    20: self.compute_moving_average(0, 20),
 					    60: self.compute_moving_average(0, 60)}
@@ -43,8 +43,7 @@ class DataAnalyzer(object):
 		self._MAMonth = {5: self.compute_moving_average(2, 5),
 					    10: self.compute_moving_average(2, 10),
 					    20: self.compute_moving_average(2, 20)}
-		self._MAHour =  {3: self.compute_moving_average(3, 3),
-					     5: self.compute_moving_average(3, 5),
+		self._MAHour =  {5: self.compute_moving_average(3, 5),
 					    20: self.compute_moving_average(3, 20),
 					    60: self.compute_moving_average(3, 60)}
 #		self._smoothedDayMA5   = self.compute_smoothed_MA5(0, 11, deriv = 0)
@@ -61,16 +60,14 @@ class DataAnalyzer(object):
 #		self._lastMaximumMonthMA5 = self.compute_historical_maximum_closest_to_today(2)
 #		self._lastMaximumHourMA5  = self.compute_historical_maximum_closest_to_today(3)
         # simply approximate derivatives f today's trends by finite difference of MAs
-		self._derivativeTodayDay   = {3: self.compute_derivative_today(0, 3, stencil = 2),
-									  5: self.compute_derivative_today(0, 5, stencil = 2),
+		self._derivativeTodayDay   = {5: self.compute_derivative_today(0, 5, stencil = 1),
 									 20: self.compute_derivative_today(0, 20, stencil = 1),
 									 60: self.compute_derivative_today(0, 60, stencil = 1)}
 		self._derivativeTodayWeek  = {5: self.compute_derivative_today(1, 5, stencil = 1),
 									 20: self.compute_derivative_today(1, 20, stencil = 1),
 									 60: self.compute_derivative_today(1, 60, stencil = 1)}
 		self._derivativeTodayMonth = {20: self.compute_derivative_today(2, 20, stencil = 1)}
-		self._derivativeTodayHour  = {3: self.compute_derivative_today(3, 3, stencil = 2),
-			                          5: self.compute_derivative_today(3, 5, stencil = 2),
+		self._derivativeTodayHour  = {5: self.compute_derivative_today(3, 5, stencil = 2),
 									 20: self.compute_derivative_today(3, 20, stencil = 2),
 									 60: self.compute_derivative_today(3, 60, stencil = 1)}
 
@@ -139,7 +136,6 @@ class DataAnalyzer(object):
 			deriv: n-th derivative
 		'''
 		data = self.get_moving_average(period)[5]
-#		print(self._dataAcquired.get_code(),period,window,len(data))
 		return savgol_filter(data, window, 3, deriv, **kwargs)
 
 	def compute_derivative_today(self, period, window: int, stencil: int = 2) -> np.float64:
@@ -201,12 +197,12 @@ class DataAnalyzer(object):
 			dMA = self.get_derivative_today("Day")
 
 		# falling trend
-		if MA[3][-1] < MA[60][-1]:
-			if dMA[3] < 0:
+		if MA[5][-1] < MA[60][-1]:
+			if dMA[5] < 0:
 				if dMA[60] < 0:
 					return self.EMPTY
 				return self.SELL
-			return self.WAIT # check this criteria!!! Usually in order to make a rising trend, MAs of the shortest period should follow MA5 >= MA60
+#			return self.SPECULATE # check this criteria!!! Usually in order to make a rising trend, MAs of the shortest period should follow MA5 >= MA60
 		# downturn of trend
 		if MA[5][-1] < MA[20][-1]:
 			if dMA[20] < 0:
@@ -231,11 +227,13 @@ class DataAnalyzer(object):
 			# if(priceClosing < 0.98 * min(self._lastMaximumWeekMA5, self._lastMaximumMonthMA5)):
 				# if priceClosing >= 0.94 * self._lastMaximumDayMA5:
 					# return self.RISING_SHORT
-				# return self.WAIT
+				# return self.SPECULATE
 			return self._check_MA_trend("long")
 		# Noob, let's start with simple trends
+		elif (self._derivativeTodayDay[20] < 0 and self._derivativeTodayWeek[20] < 0):
+			return self.IGNORE
 		else:
-			return self.WAIT
+			return self.SPECULATE
 
 	def plot_MA_and_K(self, period,ax = None):
 		MA = self.get_moving_average(period)
@@ -299,7 +297,7 @@ if __name__ == "__main__":
 	# 保存路径
 	signalsDir = "long_short_signals"
 	# 价格限制
-	priceLimit = 100.0
+	priceLimit = 200.0
 
 	size = len(codes)
 	with Pool(nproc) as pool:
