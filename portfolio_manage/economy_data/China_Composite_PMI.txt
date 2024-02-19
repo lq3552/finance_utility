@@ -1,4 +1,5 @@
 #source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
+202401  50.9  50.3
 202312  50.3  50.4
 202311  50.4  50.7
 202310  50.7  52.0
