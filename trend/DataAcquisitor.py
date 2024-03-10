@@ -314,7 +314,7 @@ if __name__ == "__main__":
 	import itertools
 	from tqdm.auto import tqdm
 
-	df = pd.read_csv('stock_codes/CSI300_component_codes_ex_BFRE.csv', dtype = {0: str})
+	df = pd.read_csv('stock_codes/CSI300_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
 	header = df.columns[0]
 	# 股票代码
 	codes = df[header]
