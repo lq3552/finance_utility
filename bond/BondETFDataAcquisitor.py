@@ -4,11 +4,11 @@ import numpy as np
 from urllib.parse import urlencode
 import requests
 import os
-import time
 import copy
 
 
-class DataAcquisitor(object):
+## TODO: using inheritance from stock DataAcquisitor, but first this tool must be package-ized
+class BondETFDataAcquisitor(object):
 
 	'''
 	静态成员，东方财富网爬取数据相关变量
@@ -46,7 +46,7 @@ class DataAcquisitor(object):
 	def __init__(self, code: str, beg: str, end: str, mode: int = 0, inDir: str = None, outDir: str = "."):
 		'''
 		参数
-			code :  6 位股票代码
+			code :  6 位ETF代码
 			beg:    开始日期 例如 20200101
 			end:    结束日期 例如 20200201
 			mode:   0 - 在线 1 - 离线
@@ -70,7 +70,6 @@ class DataAcquisitor(object):
 			self._dayK   = self._get_k_history(klt = 101)
 			self._weekK  = self._get_k_history(klt = 102)
 			self._monthK = self._get_k_history(klt = 103)
-			self._hourK  = self._get_k_history(klt = 60)
 
 	def get_code(self) -> str:
 		'''
@@ -82,16 +81,16 @@ class DataAcquisitor(object):
 		'''
 		get stock quotation URL
 		'''
-		return DataAcquisitor._QuotationURLHeader + self._get_market() + self._code
+		return BondETFDataAcquisitor._QuotationURLHeader + self._get_market() + self._code
 
 	def _get_market(self) -> str:
 		'''
-		获得股票交易市场
+		获得ETF交易市场
 		'''
-		if self._secid[0] == '0':
-			return 'SZ'
-		else:
+		if self._secid[0] == '5':
 			return 'SH'
+		else:
+			return 'SZ'
 	
 	def get_day_k(self) -> pd.DataFrame:
 		return self._dayK 
@@ -101,9 +100,6 @@ class DataAcquisitor(object):
 
 	def get_month_k(self) -> pd.DataFrame:
 		return self._monthK 
-
-	def get_hour_k(self) -> pd.DataFrame:
-		return self._hourK 
 
 	def read_from_csv(self, mode: int):
 		'''
@@ -124,17 +120,14 @@ class DataAcquisitor(object):
 									   parse_dates = [0], index_col = 0).loc[beg : end]
 			self._monthK = pd.read_csv(f"{self._inDir}/{self._code}_month.csv", encoding="utf-8-sig",
 									   parse_dates = [0], index_col = 0).loc[beg : end]
-			self._hourK  = pd.read_csv(f"{self._inDir}/{self._code}_hour.csv", encoding="utf-8-sig",
-									   parse_dates = [0], index_col = 0).loc[beg : end]
 
-			if self._dayK.empty or self._weekK.empty or self._monthK.empty or self._hourK.empty:
+			if self._dayK.empty or self._weekK.empty or self._monthK.empty:
 				raise self.UnsupportedDataFrameError()
 
 		except (FileNotFoundError, self.UnsupportedDataFrameError):
 			self._dayK   = copy.deepcopy(self.__emptyDataFrame)
 			self._weekK  = copy.deepcopy(self.__emptyDataFrame)
 			self._monthK = copy.deepcopy(self.__emptyDataFrame)
-			self._hourK  = copy.deepcopy(self.__emptyDataFrame)
 
 	def save_to_csv(self):
 		if self._mode == 1: # saving is not supported in the offline mode
@@ -144,7 +137,6 @@ class DataAcquisitor(object):
 		self._dayK.to_csv(f"{self._outDir}/{self._code}_day.csv", encoding="utf-8-sig")
 		self._weekK.to_csv(f"{self._outDir}/{self._code}_week.csv", encoding="utf-8-sig")
 		self._monthK.to_csv(f"{self._outDir}/{self._code}_month.csv", encoding="utf-8-sig")
-		self._hourK.to_csv(f"{self._outDir}/{self._code}_hour.csv", encoding="utf-8-sig")
 
 	def _gen_secid(self) -> str:
 		'''
@@ -155,10 +147,10 @@ class DataAcquisitor(object):
 		str: 指定格式的字符串
 		'''
 
-		# 深市股票
-		if self._code[0] != '6':
+		# 深市ETF
+		if self._code[0] != '5':
 			return f'0.{self._code}'
-		# 沪市股票
+		# 沪市ETF
 		return f'1.{self._code}'
 	
 	def _get_k_history(self, klt: int = 101, fqt: int = 1, setXDFlag: bool = False) -> pd.DataFrame:
@@ -184,8 +176,6 @@ class DataAcquisitor(object):
 			dfOld = self._weekK
 		elif klt == 103:
 			dfOld = self._monthK
-		elif klt == 60:
-			dfOld = self._hourK
 		else: # unsupported
 			return copy.deepcopy(self.__emptyDataFrame)
 
@@ -251,7 +241,7 @@ class DataAcquisitor(object):
 				url, headers = self.__EastmoneyHeaders).json()
 			data = json_response.get("data")
 		if data is None:
-			print("股票代码:", self._code, "可能有误")
+			print("ETF代码:", self._code, "可能有误")
 			return copy.deepcopy(self.__emptyDataFrame)
 	
 		klines = data['klines']
@@ -280,57 +270,27 @@ class DataAcquisitor(object):
 		return df
 
 
-def acquire_and_save_stock_data(code: str, startDate: str, endDate: str, outDir: str):
+def acquire_and_save_bondETF_data(code: str, startDate: str, endDate: str, outDir: str):
 	print(f"正在获取 {code} 从 {startDate} 到 {endDate} 的 k线数据......")
-	# 根据股票代码、开始日期、结束日期获取指定股票代码指定日期区间的k线数据
-	dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 0, outDir = outDir)
+	# 根据ETF代码、开始日期、结束日期获取指定ETF代码指定日期区间的k线数据
+	dataAcquisitor = BondETFDataAcquisitor(code, startDate, endDate, False, 0, outDir = outDir)
 	# 保存k线数据到表格里面
-	print(f"股票代码：{code} 的 k线数据已保存到指定目录 {outDir} 下的csv 文件中")
+	print(f"ETF代码：{code} 的 k线数据已保存到指定目录 {outDir} 下的csv 文件中")
 	dataAcquisitor.save_to_csv()
 
-def acquire_and_save_stock_data_multiprocess(param):
-	try:
-		acquire_and_save_stock_data(*param)
-		time.sleep(3)
-		return 0
-	except:
-		time.sleep(3)
-		return 1
-
-def run_data_acquisitor(nproc: int, codes, startDate: str, endDate: str, outDir: str):
-	size = len(codes)
-	with Pool(nproc) as pool:
-		result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
-					  zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
-					  total = size))
-		pool.close()
-
+	
 if __name__ == "__main__":
 	from multiprocessing import Pool
-	nproc = 10
+	nproc = 8
 	import itertools
 	from tqdm.auto import tqdm
 
+	# ETF代码
+	code = "511090"
 	# 开始日期
-	startDate = "20180621"
+	startDate = "20230616"
 	# 结束日期
 	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
 	# 输出路径
-	outDir    = "stock_price_data"
-
-	# 股票代码
-	df = pd.read_csv('stock_codes/CSI300_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
-	header = df.columns[0]
-	codes = df[header]
-
-	print("下载沪深300成分股......")
-	run_data_acquisitor(nproc, codes, startDate, endDate, outDir)
-
-
-	# 股票代码
-	df = pd.read_csv('stock_codes/CSI500_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
-	header = df.columns[0]
-	codes = df[header]
-
-	print("下载中证500成分股......")
-	run_data_acquisitor(nproc, codes, startDate, endDate, outDir)
+	outDir    = "bondETF_price_data"
+	acquire_and_save_bondETF_data(code, startDate, endDate, outDir)
