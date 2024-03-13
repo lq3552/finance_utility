@@ -151,12 +151,18 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# private
-*CashAllocator*
-!stock_codes
+# privacy
+#  general
 *.csv
+!example*.csv
 *.numbers*
+#  ./foundamental
 foundamental/
+#  ./portofolio_manage
+*CashAllocator*
+#  ./trend
+!trend/stock_codes/**
 
-#system
+# system
 .DS_Store
+*.swp
