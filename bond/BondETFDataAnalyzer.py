@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import kendalltau
 import matplotlib.pyplot as plt
 import pandas as pd
 from BondETFDataAcquisitor import BondETFDataAcquisitor
@@ -54,19 +55,26 @@ class BondETFDataAnalyzer(object):
 		return self._dataAcquired.get_day_k().loc[:, ["Close", "涨跌幅"]]
 
 	def correlate_price_with_yield(self):
-		ax = self._df.plot("Close", ["Spread_" + d for d in self._benchDuration], style = "--")
-		arr = self._df["Close"].to_numpy(copy = True)
+#		ax = self._df.plot("Close", ["Spread_" + d for d in self._benchDuration], style = "--")
+		fig, ax = plt.subplots()
+		pArr = self._df["Close"].to_numpy(copy = True)
+		pArr = pArr.astype(np.float64)
+		pToday = pArr[-1]
 		for i in range(len(self._benchDuration)):
 			d = self._benchDuration[i]
-			qToday = self._df["Spread_" + d].iloc[-1]
-			q80    = self._df["Spread_" + d].quantile(0.8)
-			q20    = self._df["Spread_" + d].quantile(0.2)
-			print(qToday)
-			ax.plot(arr, [qToday for n in range(arr.size)] , "C" + str(i) + "-")
-			ax.plot(arr, [q80    for n in range(arr.size)] , "C" + str(i) + "-.")
-			ax.plot(arr, [q20    for n in range(arr.size)] , "C" + str(i) + "-.")
-		ax.set_ylabel("Quantity")
-		ax.set_xlabel("Close")
+			qArr = self._df["Spread_" + d].to_numpy(copy = True)
+			ax.scatter(qArr, pArr, s = 16, color = "C" + str(i), label = d)
+			print("CorrCoef " + d + " = ", kendalltau(qArr, pArr))
+			qToday = qArr[-1]
+			q80    = np.quantile(qArr, 0.8)
+			q20    = np.quantile(qArr, 0.2)
+			ax.plot([0, 1], [pToday, pToday], "k-", lw = 3)
+			ax.plot([qToday, qToday], [pArr.min(), pArr.max()], "C" + str(i) + "-")
+			ax.plot([q80, q80], [pArr.min(), pArr.max()], "C" + str(i) + "-.")
+			ax.plot([q20, q20], [pArr.min(), pArr.max()], "C" + str(i) + "-.")
+		ax.set_ylabel("Close")
+		ax.set_xlabel("Spread")
+		ax.legend()
 		plt.show()
 #		ax = self._df.plot("Spread", "Close", xlabel = "Spread", ylabel = "Close")
 #		plt.show()
@@ -100,7 +108,7 @@ if __name__ == "__main__":
 	name = "30年国债ETF"
 	# 久期（暂时为单一偿还期限）
 	duration = "30Y"
-	benchDuration = ["3Y", "5Y", "7Y", "10Y"]
+	benchDuration = ["7Y", "10Y"]
 
 	print(f"正在分析{code}-{name}......")
 	analyze_bondETF_data(code, startDate, endDate, inDir, yieldCurves, duration, benchDuration)
