@@ -156,12 +156,12 @@ cython_debug/
 *.csv
 !example*.csv
 *.numbers*
-#  ./foundamental
+#  ./foundamental: a legacy folder
 foundamental/
 #  ./portofolio_manage
 *CashAllocator*
-#  ./security_tools
-!security_tools/stock_codes/**
+#  ./security_analyze
+!security_analyze/stock_codes/**
 
 # system
 .DS_Store
