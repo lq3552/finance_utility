@@ -1,5 +1,5 @@
 import pandas as pd
-from security_tools.bond.bondETF_data_acquisitor import BondETFDataAcquisitor
+from security_tools.bond import BondETFDataAcquisitor
 
 def acquire_and_save_bondETF_data(code: str, startDate: str, endDate: str, outDir: str):
 	print(f"正在获取 {code} 从 {startDate} 到 {endDate} 的 k线数据......")

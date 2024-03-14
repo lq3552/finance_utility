@@ -1,4 +1,4 @@
-__all__ = ["data_acquisitor", "data_analyzer"]
+__all__ = ["DataAcquisitor", "DataAnalyzer"]
 
-from .data_analyzer import DataAnalyzer
-from .data_acquisitor import DataAcquisitor
+from .DataAcquisitor import DataAcquisitor
+from .DataAnalyzer import DataAnalyzer

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import kendalltau
 import matplotlib.pyplot as plt
 import pandas as pd
-from ..bondETF_data_acquisitor import BondETFDataAcquisitor
+from .BondETFDataAcquisitor import BondETFDataAcquisitor
 
 
 class BondETFDataAnalyzer(object):

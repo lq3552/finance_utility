@@ -3,7 +3,7 @@ from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import pandas as pd
-from ..data_acquisitor import DataAcquisitor
+from .DataAcquisitor import DataAcquisitor
 
 
 class DataAnalyzer(object):

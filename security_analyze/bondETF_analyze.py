@@ -1,6 +1,6 @@
 import pandas as pd
-from security_tools.bond.bondETF_data_acquisitor import BondETFDataAcquisitor
-from security_tools.bond.bondETF_data_analyzer import BondETFDataAnalyzer
+from security_tools.bond import BondETFDataAcquisitor
+from security_tools.bond import BondETFDataAnalyzer
 
 
 def analyze_bondETF_data(code: str, startDate: str, endDate: str, inDir: str,

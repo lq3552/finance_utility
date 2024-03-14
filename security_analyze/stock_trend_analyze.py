@@ -2,8 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 import pandas_market_calendars as pm_calendar
-from security_tools.stock_trend.data_acquisitor import DataAcquisitor
-from security_tools.stock_trend.data_analyzer import DataAnalyzer
+from security_tools.stock_trend import DataAcquisitor
+from security_tools.stock_trend import DataAnalyzer
 
 def analyze_stock_data(code: str, startDate: str, endDate: str, inDir: str, priceLimit: np.float64):
 	dataAcquisitor = DataAcquisitor(code, startDate, endDate, 1, inDir = inDir)

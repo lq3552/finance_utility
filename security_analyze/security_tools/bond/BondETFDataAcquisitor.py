@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 import requests
 import os
 import copy
-from ...stock_trend.data_acquisitor import DataAcquisitor
+from ..stock_trend.DataAcquisitor import DataAcquisitor
 
 
 class BondETFDataAcquisitor(DataAcquisitor):
