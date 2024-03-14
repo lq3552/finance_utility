@@ -1,6 +1,6 @@
 import pandas as pd
 import time
-from stock_trend.data_acquisitor import DataAcquisitor
+from security_tools.stock_trend.data_acquisitor import DataAcquisitor
 
 
 def acquire_and_save_stock_data(code: str, startDate: str, endDate: str, outDir: str):
