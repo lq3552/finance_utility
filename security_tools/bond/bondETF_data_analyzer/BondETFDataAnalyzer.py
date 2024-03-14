@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import kendalltau
 import matplotlib.pyplot as plt
 import pandas as pd
-from BondETFDataAcquisitor import BondETFDataAcquisitor
+from ..bondETF_data_acquisitor import BondETFDataAcquisitor
 
 
 class BondETFDataAnalyzer(object):
@@ -68,7 +68,6 @@ class BondETFDataAnalyzer(object):
 		return self._dataAcquired.get_day_k().loc[:, ["Close", "涨跌幅"]]
 
 	def correlate_price_with_yield(self):
-#		ax = self._df.plot("Close", ["Spread_" + d for d in self._benchDuration], style = "--")
 		fig, ax = plt.subplots()
 		pArr = self._df["Close"].to_numpy(copy = True)
 		pArr = pArr.astype(np.float64)
@@ -88,42 +87,5 @@ class BondETFDataAnalyzer(object):
 		ax.set_ylabel("Close")
 		ax.set_xlabel("Spread")
 		ax.legend()
+		ax.set_title(self._duration)
 		plt.show()
-#		ax = self._df.plot("Spread", "Close", xlabel = "Spread", ylabel = "Close")
-#		plt.show()
-
-
-def analyze_bondETF_data(code: str, startDate: str, endDate: str, inDir: str,
-		                 duration: str, benchDuration: list[str], yieldCurves: str = None):
-	dataAcquisitor = BondETFDataAcquisitor(code, startDate, endDate, 1, inDir)
-	dataAnalyzer = BondETFDataAnalyzer(dataAcquisitor, duration, benchDuration, yieldCurves = yieldCurves)
-	dataAnalyzer.correlate_price_with_yield()
-	url   = dataAnalyzer.get_data_acquired().get_quotation_url()
-	return url
-
-
-if __name__ == "__main__":
-	from multiprocessing import Pool
-	nproc = 10
-	import itertools
-	from tqdm.auto import tqdm
-
-	# 开始日期
-	startDate = "20180621"
-	# 结束日期
-	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
-	# 输入
-	inDir       = "bondETF_price_data/"
-	yieldCurves = "yield_curves/CGBYieldCurve.csv"
-
-	# ETF代码
-	code = "511090"
-	name = "30年国债ETF"
-	# 久期（暂时为单一偿还期限）
-	duration = "30Y"
-	benchDuration = ["7Y", "10Y"]
-
-	print(f"正在分析{code}-{name}......")
-
-	BondETFDataAnalyzer.set_yield_curves(yieldCurves)
-	analyze_bondETF_data(code, startDate, endDate, inDir, duration, benchDuration)

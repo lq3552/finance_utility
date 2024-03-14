@@ -1,6 +1,6 @@
 import pandas as pd
 import time
-from data_acquisitor import DataAcquisitor
+from stock_trend.data_acquisitor import DataAcquisitor
 
 
 def acquire_and_save_stock_data(code: str, startDate: str, endDate: str, outDir: str):
@@ -14,10 +14,10 @@ def acquire_and_save_stock_data(code: str, startDate: str, endDate: str, outDir:
 def acquire_and_save_stock_data_multiprocess(param):
 	try:
 		acquire_and_save_stock_data(*param)
-		time.sleep(3)
+		time.sleep(1)
 		return 0
 	except:
-		time.sleep(3)
+		time.sleep(1)
 		return 1
 
 def run_data_acquisitor(nproc: int, codes: list[str], startDate: str, endDate: str, outDir: str):

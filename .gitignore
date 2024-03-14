@@ -160,8 +160,8 @@ cython_debug/
 foundamental/
 #  ./portofolio_manage
 *CashAllocator*
-#  ./stock_trend
-!stock_trend/stock_codes/**
+#  ./security_tools
+!security_tools/stock_codes/**
 
 # system
 .DS_Store
