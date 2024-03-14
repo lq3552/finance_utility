@@ -266,7 +266,7 @@ class DataAnalyzer(object):
 
 
 def analyze_stock_data(code: str, startDate: str, endDate: str, inDir: str, priceLimit: np.float64):
-	dataAcquisitor = DataAcquisitor(code, startDate, endDate, False, 1, inDir = inDir)
+	dataAcquisitor = DataAcquisitor(code, startDate, endDate, 1, inDir = inDir)
 	dataAnalyzer = DataAnalyzer(dataAcquisitor)
 	signal = dataAnalyzer.send_signal(priceLimit)
 	url   = dataAnalyzer.get_data_acquired().get_quotation_url()
@@ -333,6 +333,9 @@ if __name__ == "__main__":
 	names = df[headerName]
 
 	print(f"正在分析沪深300成分股的k线数据......")
+	outDir = signalsDir
+	outPrefix = signalsPrefix
+	size = len(codes)
 	run_data_analyzer(nproc, codes, names, startDate, endDate, inDir, signalsDir, signalsPrefix, priceLimit)
 
 	'''
