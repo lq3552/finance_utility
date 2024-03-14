@@ -115,11 +115,11 @@ class BondETFDataAcquisitor(object):
 				end = self._end
 
 			self._dayK   = pd.read_csv(f"{self._inDir}/{self._code}_day.csv", encoding="utf-8-sig",
-									   parse_dates = [0], index_col = 0).loc[beg : end]
+									   parse_dates = [0], index_col = 0, dtype = np.float64).loc[beg : end]
 			self._weekK  = pd.read_csv(f"{self._inDir}/{self._code}_week.csv", encoding="utf-8-sig",
-									   parse_dates = [0], index_col = 0).loc[beg : end]
+									   parse_dates = [0], index_col = 0, dtype = np.float64).loc[beg : end]
 			self._monthK = pd.read_csv(f"{self._inDir}/{self._code}_month.csv", encoding="utf-8-sig",
-									   parse_dates = [0], index_col = 0).loc[beg : end]
+									   parse_dates = [0], index_col = 0, dtype = np.float64).loc[beg : end]
 
 			if self._dayK.empty or self._weekK.empty or self._monthK.empty:
 				raise self.UnsupportedDataFrameError()
