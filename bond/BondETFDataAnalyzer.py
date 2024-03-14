@@ -9,49 +9,62 @@ class BondETFDataAnalyzer(object):
 	'''
 	Information extractor and analyzer based on the stock data
 	'''
+	_yieldCurves = pd.DataFrame()
 
-	def __init__(self, dataAcquired: BondETFDataAcquisitor, yieldCurves: str, duration: str, benchDuration):
+	def __init__(self, dataAcquired: BondETFDataAcquisitor, duration: str, benchDuration: list[str], yieldCurves: str = None):
 		'''
 		param:
 			dataAcquired: BondETFDataAcquisitor containing the stock data
 			duration: duration of bond ETF
 			benchDuration: a list of benchmark duration(s)
+			yieldCurves: path to yield curve data
 		'''
+		print(type(benchDuration))
 		self._dataAcquired  = dataAcquired
 		self._duration      = duration
 		self._benchDuration = benchDuration
-		self._yieldCurves   = self._set_yield_curves(yieldCurves)
+
+		if self._yieldCurves.empty:
+			self.set_yield_curves(yieldCurves)
 		self._closingPrices = self.get_closing_price_history()
-		self._df            = self._closingPrices.join(self._yieldCurves)
+		self._df = self._closingPrices.join(self._yieldCurves[[duration] + benchDuration])
+		print(self._df)
 		for d in benchDuration:
-			sbd = "Spread_" + d
-			self._df[sbd] = self._df["Yield_" + duration] - self._df["Yield_" + d]
-			self._df[sbd] = (self._df[sbd] - self._df[sbd].min()) / (self._df[sbd].max() - self._df[sbd].min())
-		yd = "Yield_"+ duration
-		self._df[yd + "_scaled"] = (self._df[yd] - self._df[yd].min()) / (self._df[yd].max() - self._df[yd].min())
+			sd = "Spread_" + d
+			self._df[sd] = self._df[duration] - self._df[d]
+			self._df[sd] = (self._df[sd] - self._df[sd].min()) / (self._df[sd].max() - self._df[sd].min())
+		self._df[duration + "_scaled"] = (self._df[duration] - self._df[duration].min()) / (self._df[duration].max() - self._df[duration].min())
 		print(self._df)
 
+	@classmethod
+	def set_yield_curves(cls, yieldCurves) -> pd.Series:
+		"""
+		Setup yield curve data
+		param:
+			yieldCurves: path to yield curve data
+		"""
+		cls._yieldCurves = pd.read_csv(f"{yieldCurves}", parse_dates = [0], index_col = 0, dtype = np.float64)
+
+	@classmethod
+	def get_yield_curves(cls) -> pd.DataFrame:
+		"""
+		return:
+			yield curve data as pandas DataFrame
+		"""
+		return cls._yieldCurves
+
 	def get_data_acquired(self) -> BondETFDataAcquisitor :
-		'''
-		return BondETFDataAcquisitor that contains the stock trading data
-		'''
+		"""
+		return:
+			BondETFDataAcquisitor that contains the stock trading data
+		"""
 		return self._dataAcquired
 
-	def _set_yield_curves(self, yieldCurves) -> pd.Series:
-		data = pd.read_csv(f"{yieldCurves}", parse_dates = [0], index_col = 0, dtype = np.float64).loc[:, [self._duration] + self._benchDuration]
-		data.rename(columns = {self._duration: "Yield_" + self._duration}, inplace = True)
-		for d in self._benchDuration:
-			data.rename(columns = {d: "Yield_" + d}, inplace = True)
-		return data
-	
-	def get_yield_curves(self) -> pd.DataFrame:
-		return self._yieldCurves
-
 	def get_closing_price_history(self) -> pd.DataFrame:
-		'''
-		param:
-			period: day - 0, week - 1, month - 2, hour - 3
-		'''
+		"""
+		return:
+			day-K data with closing price and change as pandas DataFrame
+		"""
 		return self._dataAcquired.get_day_k().loc[:, ["Close", "涨跌幅"]]
 
 	def correlate_price_with_yield(self):
@@ -64,7 +77,7 @@ class BondETFDataAnalyzer(object):
 			d = self._benchDuration[i]
 			qArr = self._df["Spread_" + d].to_numpy(copy = True)
 			ax.scatter(qArr, pArr, s = 16, color = "C" + str(i), label = d)
-			print("CorrCoef " + d + " = ", kendalltau(qArr, pArr))
+			print("CorrCoef_Kendall_" + d + " = ", kendalltau(qArr, pArr))
 			qToday = qArr[-1]
 			q80    = np.quantile(qArr, 0.8)
 			q20    = np.quantile(qArr, 0.2)
@@ -80,10 +93,10 @@ class BondETFDataAnalyzer(object):
 #		plt.show()
 
 
-def analyze_bondETF_data(code: str, startDate: str, endDate: str, inDir: str, yieldCurves: str, duration: str, benchDuration: str):
-	print(inDir)
-	dataAcquisitor = BondETFDataAcquisitor(code, startDate, endDate, False, 1, inDir)
-	dataAnalyzer = BondETFDataAnalyzer(dataAcquisitor, yieldCurves, duration, benchDuration)
+def analyze_bondETF_data(code: str, startDate: str, endDate: str, inDir: str,
+		                 duration: str, benchDuration: list[str], yieldCurves: str = None):
+	dataAcquisitor = BondETFDataAcquisitor(code, startDate, endDate, 1, inDir)
+	dataAnalyzer = BondETFDataAnalyzer(dataAcquisitor, duration, benchDuration, yieldCurves = yieldCurves)
 	dataAnalyzer.correlate_price_with_yield()
 	url   = dataAnalyzer.get_data_acquired().get_quotation_url()
 	return url
@@ -111,4 +124,6 @@ if __name__ == "__main__":
 	benchDuration = ["7Y", "10Y"]
 
 	print(f"正在分析{code}-{name}......")
-	analyze_bondETF_data(code, startDate, endDate, inDir, yieldCurves, duration, benchDuration)
+
+	BondETFDataAnalyzer.set_yield_curves(yieldCurves)
+	analyze_bondETF_data(code, startDate, endDate, inDir, duration, benchDuration)

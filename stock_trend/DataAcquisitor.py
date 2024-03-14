@@ -297,7 +297,7 @@ def acquire_and_save_stock_data_multiprocess(param):
 		time.sleep(3)
 		return 1
 
-def run_data_acquisitor(nproc: int, codes, startDate: str, endDate: str, outDir: str):
+def run_data_acquisitor(nproc: int, codes: list(str), startDate: str, endDate: str, outDir: str):
 	size = len(codes)
 	with Pool(nproc) as pool:
 		result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
