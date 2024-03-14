@@ -275,7 +275,7 @@ def analyze_stock_data(code: str, startDate: str, endDate: str, inDir: str, pric
 def analyze_stock_data_multiprocess(param):
 	return analyze_stock_data(*param)
 
-def run_data_analyzer(nproc: int, codes: list(str), names: list(str), startDate: str, endDate: str, inDir: str, outDir: str, outPrefix: str, priceLimit: np.float64):
+def run_data_analyzer(nproc: int, codes: list[str], names: list[str], startDate: str, endDate: str, inDir: str, outDir: str, outPrefix: str, priceLimit: np.float64):
 	size = len(codes)
 	with Pool(nproc) as pool:
 		signals, urls = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
