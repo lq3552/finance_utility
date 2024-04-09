@@ -1,5 +1,6 @@
 #source: S&P Global https://www.pmi.spglobal.com/public
 #Month  Actual Forecast
+202403  46.1  45.7
 202402  46.5  46.6
 202401  46.6  46.6
 202312  44.4  44.2

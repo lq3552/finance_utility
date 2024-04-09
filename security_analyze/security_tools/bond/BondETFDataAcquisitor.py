@@ -1,10 +1,3 @@
-import pandas as pd
-import pandas_market_calendars as pm_calendar
-import numpy as np
-from urllib.parse import urlencode
-import requests
-import os
-import copy
 from ..stock_trend.DataAcquisitor import DataAcquisitor
 
 
