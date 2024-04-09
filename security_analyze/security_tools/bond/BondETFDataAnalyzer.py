@@ -19,7 +19,6 @@ class BondETFDataAnalyzer(object):
 			benchDuration: a list of benchmark duration(s)
 			yieldCurves: path to yield curve data
 		'''
-		print(type(benchDuration))
 		self._dataAcquired  = dataAcquired
 		self._duration      = duration
 		self._benchDuration = benchDuration
@@ -28,12 +27,12 @@ class BondETFDataAnalyzer(object):
 			self.set_yield_curves(yieldCurves)
 		self._closingPrices = self.get_closing_price_history()
 		self._df = self._closingPrices.join(self._yieldCurves[[duration] + benchDuration])
-		print(self._df)
 		for d in benchDuration:
 			sd = "Spread_" + d
 			self._df[sd] = self._df[duration] - self._df[d]
 			self._df[sd] = (self._df[sd] - self._df[sd].min()) / (self._df[sd].max() - self._df[sd].min())
 		self._df[duration + "_scaled"] = (self._df[duration] - self._df[duration].min()) / (self._df[duration].max() - self._df[duration].min())
+		self._df.dropna(axis = 0, inplace = True)
 		print(self._df)
 
 	@classmethod
@@ -80,10 +79,10 @@ class BondETFDataAnalyzer(object):
 			qToday = qArr[-1]
 			q80    = np.quantile(qArr, 0.8)
 			q20    = np.quantile(qArr, 0.2)
-			ax.plot([0, 1], [pToday, pToday], "k-", lw = 3)
-			ax.plot([qToday, qToday], [pArr.min(), pArr.max()], "C" + str(i) + "-")
-			ax.plot([q80, q80], [pArr.min(), pArr.max()], "C" + str(i) + "-.")
-			ax.plot([q20, q20], [pArr.min(), pArr.max()], "C" + str(i) + "-.")
+			ax.plot([0, 1], [pToday, pToday], "k-", lw = 2)
+			ax.plot([qToday, qToday], [pArr.min(), pArr.max()], "C" + str(i) + "-", lw = 2)
+			ax.plot([q80, q80], [pArr.min(), pArr.max()], "C" + str(i) + "-.", lw = 2)
+			ax.plot([q20, q20], [pArr.min(), pArr.max()], "C" + str(i) + "-.", lw = 2)
 		ax.set_ylabel("Close")
 		ax.set_xlabel("Spread")
 		ax.legend()
