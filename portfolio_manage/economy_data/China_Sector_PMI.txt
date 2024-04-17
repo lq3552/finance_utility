@@ -1,4 +1,5 @@
 #source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
+202403  50.8  -2.12 53.0  -8.93
 202402  49.1  -6.65 51.4  -8.7
 202401  49.2  -1.8  50.7  -6.8
 202312  49.0  4.26  50.4  21.15
