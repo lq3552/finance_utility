@@ -1,5 +1,7 @@
 #source: S&P Global https://www.pmi.spglobal.com/public
 #Month  Actual  Previous
+202406  50.9  50.8
+202405  52.2  51.7
 202404  51.7  50.3
 202403  50.3  49.2
 202402  49.2  47.9
