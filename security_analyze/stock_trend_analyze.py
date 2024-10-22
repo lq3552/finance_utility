@@ -61,22 +61,8 @@ if __name__ == "__main__":
 	inDir     = "stock_price_data"
 	# 保存路径
 	signalsDir = "long_short_signals"
-	signalsPrefix = "signalsCSI300"
 	# 价格限制
 	priceLimit = 200.0
-
-	# 股票代码
-	df = pd.read_csv('stock_codes/CSI300_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
-	headerCode = df.columns[0]
-	headerName = df.columns[1]
-	codes = df[headerCode]
-	names = df[headerName]
-
-	print(f"正在分析沪深300成分股的k线数据......")
-	outDir = signalsDir
-	outPrefix = signalsPrefix
-	size = len(codes)
-	run_data_analyzer(nproc, codes, names, startDate, endDate, inDir, signalsDir, signalsPrefix, priceLimit)
 
 	'''
 	# example candlestick plot
@@ -88,13 +74,13 @@ if __name__ == "__main__":
 	'''
 
 	# 保存路径
-	signalsPrefix = "signalsCSI500"
+	signalsPrefix = "signalsCSIA500"
 	# 股票代码
-	df = pd.read_csv('stock_codes/CSI500_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
+	df = pd.read_csv('stock_codes/CSIA500_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
 	headerCode = df.columns[0]
 	headerName = df.columns[1]
 	codes = df[headerCode]
 	names = df[headerName]
 
-	print(f"正在分析中证500成分股的k线数据......")
+	print(f"正在分析中证A500成分股的k线数据......")
 	run_data_analyzer(nproc, codes, names, startDate, endDate, inDir, signalsDir, signalsPrefix, priceLimit)

@@ -42,18 +42,9 @@ if __name__ == "__main__":
 	outDir    = "stock_price_data"
 
 	# 股票代码
-	df = pd.read_csv('stock_codes/CSI300_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
+	df = pd.read_csv("stock_codes/CSIA500_component_codes_exBFRE_exSTAR.csv", dtype = {0: str})
 	header = df.columns[0]
 	codes = df[header]
 
-	print("下载沪深300成分股......")
-	run_data_acquisitor(nproc, codes, startDate, endDate, outDir)
-
-
-	# 股票代码
-	df = pd.read_csv('stock_codes/CSI500_component_codes_exBFRE_exSTAR.csv', dtype = {0: str})
-	header = df.columns[0]
-	codes = df[header]
-
-	print("下载中证500成分股......")
+	print("下载中证A500成分股......")
 	run_data_acquisitor(nproc, codes, startDate, endDate, outDir)
