@@ -21,30 +21,37 @@ def acquire_and_save_stock_data_multiprocess(param):
 		return 1
 
 def run_data_acquisitor(nproc: int, codes: list[str], startDate: str, endDate: str, outDir: str):
-	size = len(codes)
-	with Pool(nproc) as pool:
-		result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
-					  zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
-					  total = size))
-		pool.close()
+    import itertools
+    from multiprocessing import Pool
+    from tqdm.auto import tqdm
+
+    size = len(codes)
+    with Pool(nproc) as pool:
+        result = list(tqdm(pool.imap(acquire_and_save_stock_data_multiprocess,
+                      zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(outDir))),
+                      total = size))
+        pool.close()
 
 if __name__ == "__main__":
-	from multiprocessing import Pool
-	nproc = 10
-	import itertools
-	from tqdm.auto import tqdm
+    import sys
+    if len(sys.argv) >= 2 and sys.argv[1].isdigit():
+        nproc = int(sys.argv[1])
+    else:
+        nproc = 8
+    print(nproc)
 
-	# 开始日期
-	startDate = "20180621"
-	# 结束日期
-	endDate   = pd.to_datetime("today").strftime("%Y%m%d")
-	# 输出路径
-	outDir    = "stock_price_data"
 
-	# 股票代码
-	df = pd.read_csv("stock_codes/CSIA500_component_codes_exBFRE_exSTAR.csv", dtype = {0: str})
-	header = df.columns[0]
-	codes = df[header]
+    # 开始日期
+    startDate = "20180621"
+    # 结束日期
+    endDate   = pd.to_datetime("today").strftime("%Y%m%d")
+    # 输出路径
+    outDir    = "stock_price_data"
 
-	print("下载中证A500成分股......")
-	run_data_acquisitor(nproc, codes, startDate, endDate, outDir)
+    # 股票代码
+    df = pd.read_csv("stock_codes/CSIA500_component_codes_exBFRE_exSTAR.csv", dtype = {0: str})
+    header = df.columns[0]
+    codes = df[header]
+
+    print("下载中证A500成分股......")
+    run_data_acquisitor(nproc, codes, startDate, endDate, outDir)
