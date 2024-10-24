@@ -37,9 +37,7 @@ if __name__ == "__main__":
     if len(sys.argv) >= 2 and sys.argv[1].isdigit():
         nproc = int(sys.argv[1])
     else:
-        nproc = 8
-    print(nproc)
-
+        nproc = None
 
     # 开始日期
     startDate = "20180621"
