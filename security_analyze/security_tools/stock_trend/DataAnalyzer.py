@@ -91,7 +91,7 @@ class DataAnalyzer(object):
 
 	def get_closing_price_today(self):
 		price = self.get_closing_price_history(0)
-		return price[price.shape[0] - 1]
+		return price.iloc[price.shape[0] - 1]
 
 	def compute_moving_average(self, period, window: int) -> np.ndarray: # for now I just assume we have enough data, otherwise simply skip
 		'''
