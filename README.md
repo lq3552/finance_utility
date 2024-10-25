@@ -1,6 +1,6 @@
 # finance_utility
-finance_utiliy is an in-house financial toolkit for portfolio and trend analysis
-## required package
+`finance_utiliy` is an in-house financial toolkit for portfolio management and trend-based analysis of securities. <mark>NOTE:</mark> For now it is only a loosely organized collection. Later on it will be made into a real package. 
+## required packages
 
 finance_utility requires:
 
