@@ -15,4 +15,4 @@ finance_utility requires:
 Refer to scripts in `portfolio_manage` to assist in decisions related to general portfolio management.
 
 Refer to scripts in `security_analyze` to assist in more aggressive bond and stock "investment", or rather, speculation.
-<mark>WARNING:</mark> although the principles are generally suitable for all well-governed markets, the tools are tuned toward the security markets in China.
+<mark>WARNING:</mark> although the principles are generally suitable for all well-governed markets, the tools are tuned toward the security markets in China. If you are stuck with the USA/Japan/UK/Canada/South Korea markets, then I can only wish you good luck, I mean it seriously, you know what I mean. 
