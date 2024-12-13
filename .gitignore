@@ -160,6 +160,7 @@ cython_debug/
 foundamental/
 #  ./portofolio_manage
 *CashAllocator*
+*Allocate*
 #  ./security_analyze
 !security_analyze/stock_codes/**
 
