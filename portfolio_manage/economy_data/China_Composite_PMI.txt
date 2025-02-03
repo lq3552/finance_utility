@@ -1,5 +1,7 @@
 #source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
 #Month  PMI
+202501  50.1
+202412  52.2
 202411  50.8
 202410  50.8
 202409  50.4
