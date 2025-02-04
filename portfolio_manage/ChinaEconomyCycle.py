@@ -20,10 +20,13 @@ class ChinaEconomyCycle(object):
         self.ppi = dat_ppi[:,2]
         self.cpi = dat_cpi[:,2]
         size = min(self.pmi.shape[0], self.ppi.shape[0], self.cpi.shape[0])
-        self.t = self.t[self.pmi.shape[0] - size:] // 100 + (self.t % 100 - 1) / 12
-        self.pmi = self.pmi[self.pmi.shape[0] - size:]
-        self.ppi = self.ppi[self.ppi.shape[0] - size:]
-        self.cpi = self.cpi[self.cpi.shape[0] - size:]
+        self.t = self.__resize(self.t, size)
+        self.t = self.t // 100 + (self.t % 100 - 1) / 12
+        self.pmi = self.__resize(self.pmi, size)
+        self.ppi = self.__resize(self.ppi, size)
+        self.cpi = self.__resize(self.cpi, size)
+        self.pmi_2nd = self.__resize(self.pmi_2nd, size)
+        self.pmi_else = self.__resize(self.pmi_else, size)
 
     def HP_filter(self, lamb):
         '''
@@ -41,6 +44,10 @@ class ChinaEconomyCycle(object):
 
     def correlate_pmi_2nd_and_else(self):
         print("(Person r, p-value) = ", stats.pearsonr(self.pmi_2nd, self.pmi_else))
+
+    def __resize(self, array, size):
+        array = array[array.shape[0] - size:]
+        return array
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

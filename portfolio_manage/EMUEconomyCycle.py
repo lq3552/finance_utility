@@ -8,12 +8,16 @@ class EMUEconomyCycle(object):
         dat_pmi_manu = np.loadtxt(file_pmi_manu)
         dat_cpi = np.loadtxt(file_cpi)
         self.t = dat_pmi[:,0]
-        self.t = self.t // 100 + (self.t % 100 - 1) / 12
         self.pmi = dat_pmi[:,1]
         self.pmi = (self.pmi - 50.0) * 1
         self.cpi = dat_cpi[:,1]
         self.pmi_manu = dat_pmi_manu[:, 1]
         self.pmi_manu_hungary = dat_pmi_manu[:, 3]
+        size =  min(self.pmi.shape[0], self.cpi.shape[0])
+        self.t = self.__resize(self.t, size)
+        self.t = self.t // 100 + (self.t % 100 - 1) / 12
+        self.pmi = self.__resize(self.pmi, size)
+        self.cpi = self.__resize(self.cpi, size)
 
     def HP_filter(self, lamb):
         '''
@@ -27,6 +31,10 @@ class EMUEconomyCycle(object):
         y = self.cpi
         cpi_cycle, cpi_trend = sm.tsa.filters.hpfilter(y, lamb = lamb)
         return pmi_cycle, pmi_trend, cpi_cycle, cpi_trend
+
+    def __resize(self, array, size):
+        array = array[array.shape[0] - size:]
+        return array
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
