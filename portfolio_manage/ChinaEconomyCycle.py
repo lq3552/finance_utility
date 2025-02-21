@@ -43,7 +43,7 @@ class ChinaEconomyCycle(object):
         return pmi_cycle, pmi_trend, ppi_cycle, ppi_trend, cpi_cycle, cpi_trend
 
     def correlate_pmi_2nd_and_else(self):
-        print("(Person r, p-value) = ", stats.pearsonr(self.pmi_2nd, self.pmi_else))
+        print("(Kendall tau, p-value) = ", stats.kendalltau(self.pmi_2nd, self.pmi_else))
 
     def __resize(self, array, size):
         array = array[array.shape[0] - size:]
