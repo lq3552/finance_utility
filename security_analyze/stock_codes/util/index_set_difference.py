@@ -18,7 +18,7 @@ def index_set_difference(argv, inplace = False):
 	else:
 		tableResultName = argv[3]
 	
-	tableResult = tableMinuend.drop(tableSubtrahend.index)
+	tableResult = tableMinuend.drop(tableSubtrahend.index, errors = "ignore")
 	tableResult.to_csv(tableResultName)
 
 
