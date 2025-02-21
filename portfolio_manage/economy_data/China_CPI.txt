@@ -1,5 +1,6 @@
 #source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
 #Date  Nationwide  Urban(YoY MoM Cum)  Rural(YoY MoM Cum) (Last Year Same Month = 100)
+202501  100.5  0.5  0.7  100.5  100.6  0.6  0.8  100.6  100.3  0.3  0.5  100.3
 202412  100.1  0.1  0.0  100.2  100.1  0.1  0.0  100.2  100.0  0.0  -0.1  100.3
 202411  100.2  0.2  -0.6  100.3  100.1  0.1  -0.6  100.2  100.2  0.2  -0.6  100.3
 202410  100.3  0.3  -0.3  100.3  100.2  0.2  -0.3  100.2  100.3  0.3  -0.3  100.3
