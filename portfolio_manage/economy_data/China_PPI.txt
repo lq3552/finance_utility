@@ -1,5 +1,6 @@
 #source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
 #Month  Current YoY  Cummulative
+202502  97.8  -2.20  97.8
 202501  97.7  -2.30  97.7
 202412  97.7  -2.30  97.8
 202411  97.5  -2.50  97.9

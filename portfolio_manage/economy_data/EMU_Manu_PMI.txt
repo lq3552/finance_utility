@@ -1,6 +1,7 @@
 #source - EMU: S&P Global https://www.pmi.spglobal.com/public
 #source - Hungary: HALPIM http://logisztika.hu/
 #Month  Actual  Preliminary  Hungary
+202502  47.6  47.3  51.0
 202501  46.6  46.1  49.8 
 202412  45.1  45.2  50.6
 202411  45.2  45.2  50.3

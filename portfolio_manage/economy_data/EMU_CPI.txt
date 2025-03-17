@@ -1,5 +1,6 @@
 #source: Eurostat https://ec.europa.eu/eurostat
 #Month  Actual Forecast Previous+Adjusted
+202502  2.4  2.3  2.5
 202501  2.5  2.4  2.4
 202412  2.4  2.4  2.2
 202411  2.3  2.3  2.0
