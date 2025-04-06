@@ -156,6 +156,7 @@ cython_debug/
 *.csv
 !example*.csv
 *.numbers*
+privat*
 #  ./foundamental: a legacy folder
 foundamental/
 #  ./portofolio_manage
