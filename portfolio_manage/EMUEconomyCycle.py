@@ -43,7 +43,7 @@ if __name__ == "__main__":
     eec = EMUEconomyCycle("economy_data/EMU_Composite_PMI_SPGlobal.txt",
             "economy_data/EMU_Manu_PMI.txt",
             "economy_data/EMU_CPI.txt")
-    pmi_cycle, pmi_trend, cpi_cycle, cpi_trend = eec.HP_filter(lamb = 14400)
+    pmi_cycle, pmi_trend, cpi_cycle, cpi_trend = eec.HP_filter(lamb = 1600)
     dpmi_trend = pmi_trend[:-1] - pmi_trend[1:]
     dcpi_trend = cpi_trend[:-1] - cpi_trend[1:]
 

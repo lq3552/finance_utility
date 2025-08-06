@@ -1,5 +1,8 @@
 #source: Eurostat https://ec.europa.eu/eurostat/
 #Month  actual forecast
+202506  0.6  0.5
+202505  0.3  0.3
+202504  0.7  1.2
 202503  1.9  2.0
 202502  3.0  nan
 202501  1.8  1.4
