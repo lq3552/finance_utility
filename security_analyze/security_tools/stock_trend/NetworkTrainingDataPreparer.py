@@ -1,0 +1,2 @@
+class NetworkTrainingDataPreparer(object):
+    pass

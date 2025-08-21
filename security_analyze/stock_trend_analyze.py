@@ -59,7 +59,7 @@ if __name__ == "__main__":
         nproc = None
 
     # 开始日期
-    startDate = "20180621"
+    startDate = "20210101"
     # 结束日期
     endDate   = pd.to_datetime("today").strftime("%Y%m%d")
     # 输入路径
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # 保存路径
     signalsDir = "long_short_signals"
     # 价格限制
-    priceLimit = 200.0
+    priceLimit = 9999.0
 
     '''
     # example candlestick plot

@@ -40,7 +40,7 @@ if __name__ == "__main__":
         nproc = None
 
     # 开始日期
-    startDate = "20180621"
+    startDate = "20130101"
     # 结束日期
     endDate   = pd.to_datetime("today").strftime("%Y%m%d")
     # 输出路径

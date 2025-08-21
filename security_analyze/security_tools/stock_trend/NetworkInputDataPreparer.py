@@ -1,0 +1,2 @@
+class NetworkInputDataPreparer(object):
+    pass
