@@ -17,4 +17,4 @@ Refer to scripts in `portfolio_manage` to assist in decisions related to general
 Refer to scripts in `security_analyze` to assist in more aggressive bond and stock "investment", or rather, speculation.
 <mark>WARNING:</mark> although the principles are generally suitable for all well-governed markets, the tools for stocks are tuned toward the security markets in China. If you plan to invest your hard-earned money in the USA/Japan/UK/Canada/South Korea stock markets in 2024+ or are stuck with them, then you must have too much money to play with, so I can only wish you good luck, I mean it seriously, you know what I mean. 
 
-<mark>WARNING:</mark> 2024.04.04 will be memorized as one of the monuments of the history. We GO TO TOTAL WAR!
+<mark>WARNING:</mark> 2025.04.04 will be memorized as one of the monuments of the history. We GO TO TOTAL WAR!
