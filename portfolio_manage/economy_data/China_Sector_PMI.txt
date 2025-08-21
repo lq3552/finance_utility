@@ -1,5 +1,6 @@
 #source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
 #Month  Manu  M-YoY   Non-M  NM-YoY
+202507  49.3  -0.20 50.1  -0.20
 202506  49.7  0.40  50.5  0.00
 202505  49.5  0.00  50.3  -1.57
 202504  49.0  -2.78 50.4  -1.56
