@@ -17,7 +17,6 @@ class DataAnalyzer(object):
     EMPTY            = -2
     SELL             = -1
     SPECULATE        = 0
-    SELL_OR_HESITATE = 1
     RISING_SHORT     = 2
     RISING_LONG      = 3
     PeriodAlias = [[0, "d", "D", "Day", "day"],
@@ -198,14 +197,18 @@ class DataAnalyzer(object):
                 if dMA[60] < 0:
                     return self.EMPTY
                 return self.SELL
-#           return self.SPECULATE # check this criteria!!! Usually in order to make a rising trend, MAs of the shortest period should follow MA5 >= MA60
         # downturn of trend
         if MA[5][-1] < MA[20][-1]:
             if dMA[20] < 0:
                 return self.SELL
-        if length == "long" and self.get_closing_price_today() < MA[20][-1]:
-            if self._check_MA_trend("short") <= 0:
-                return self.SELL_OR_HESITATE
+        # price lower than MA20
+        if self.get_closing_price_today() < MA[20][-1]:
+            if length == "short":
+                return self.SPECULATE
+            else:
+                length = "short"
+                if self._check_MA_trend("short") <= 0:
+                    return self.SPECULATE
         # rising trend
         return self.RISING_SHORT if length == "short" else self.RISING_LONG
 
@@ -214,7 +217,7 @@ class DataAnalyzer(object):
         get a signal indicating the decision made
         '''
         priceClosing = self.get_closing_price_today()
-        if (priceClosing > priceLimit): # at most 100 * priceLimit RMB to buy in
+        if (priceClosing > priceLimit):
             return int(-priceLimit)
         
         ### short term
