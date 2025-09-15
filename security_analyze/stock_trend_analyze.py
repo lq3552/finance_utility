@@ -22,23 +22,28 @@ def run_data_analyzer(nproc: int, codes: list[str], names: list[str], startDate:
 
     size = len(codes)
     with Pool(nproc) as pool:
+        print("分析T+0期信号")
         signals, urls = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
-        					zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(inDir), itertools.repeat(priceLimit))),
-        					total = size))
+        				zip(codes, itertools.repeat(startDate), itertools.repeat(endDate), itertools.repeat(inDir), itertools.repeat(priceLimit))),
+        				total = size))
+        signals = np.array([*signals])
         marketCalendar = pm_calendar.get_calendar('XSHG').schedule(start_date = startDate, end_date = endDate)
-        endDateOld = pd.to_datetime(endDate) - pd.Timedelta(days=1)
-        while not endDateOld in marketCalendar.index:
-        	if os.path.exists(f"{outDir}/{outPrefix}_{endDateOld.strftime('%Y%m%d')}.csv"):
-        		break
-        	endDateOld = endDateOld - pd.Timedelta(days=1)
-        endDateOld = endDateOld.strftime("%Y%m%d")
-        signalsOld, _ = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
-        					zip(codes, itertools.repeat(startDate), itertools.repeat(endDateOld), itertools.repeat(inDir), itertools.repeat(priceLimit))),
-        					total = size))
-        pool.close()
+        signalsOld = np.zeros((signals.shape[0], 2), dtype = int)
+        for i in range(signalsOld.shape[1]):
+            endDateOld = pd.to_datetime(endDate) - pd.Timedelta(days=1)
+            while not endDateOld in marketCalendar.index:
+        	    if os.path.exists(f"{outDir}/{outPrefix}_{endDateOld.strftime('%Y%m%d')}.csv"):
+        		    break
+        	    endDateOld = endDateOld - pd.Timedelta(days=1)
+            endDateOld = endDateOld.strftime("%Y%m%d")
+            print("分析T-" + str(i+1) + "期信号")
+            signalsOld[:,i], _ = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
+        	                     zip(codes, itertools.repeat(startDate), itertools.repeat(endDateOld), itertools.repeat(inDir), itertools.repeat(priceLimit))),
+        	                     total = size))
 
     print(f"保存购买信号......")
-    df = pd.DataFrame({"股票简称":names.values, "行情地址": urls, "购买信号": signals, "上期信号": signalsOld, 
+    df = pd.DataFrame({"股票简称":names.values, "行情地址": urls,
+                       "购买信号": signals, "上期信号": signalsOld[:, 0], "上上期信号": signalsOld[:, 1],
                        "上期备注": ['' for i in range(len(codes))], "备注": ['' for i in range(len(codes))]},
                        index = pd.Index(codes, name = "股票代码"))
     df.sort_values(by = ["购买信号","上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
@@ -59,7 +64,7 @@ if __name__ == "__main__":
         nproc = None
 
     # 开始日期
-    startDate = "20210101"
+    startDate = "20190101"
     # 结束日期
     endDate   = pd.to_datetime("today").strftime("%Y%m%d")
     # 输入路径
