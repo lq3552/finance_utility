@@ -47,7 +47,7 @@ def run_data_analyzer(nproc: int, codes: list[str], names: list[str], startDate:
                        "购买信号": signals, "上期信号": signalsOld[:, 0], "上上期信号": signalsOld[:, 1],
                        "上期备注": ['' for i in range(len(codes))], "备注": ['' for i in range(len(codes))]},
                        index = pd.Index(codes, name = "股票代码"))
-    df.sort_values(by = ["购买信号","上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
+    df.sort_values(by = ["购买信号","上期信号", "上上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
     try: 
         dfOld = pd.read_csv(f"{outDir}/{outPrefix}_{endDateOld}.csv", dtype = {"股票代码": str, "备注": str})
         dfOld.set_index("股票代码", inplace=True)
