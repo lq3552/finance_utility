@@ -29,8 +29,9 @@ def run_data_analyzer(nproc: int, codes: list[str], names: list[str], startDate:
         signals = np.array([*signals])
         marketCalendar = pm_calendar.get_calendar('XSHG').schedule(start_date = startDate, end_date = endDate)
         signalsOld = np.zeros((signals.shape[0], 2), dtype = int)
+        endDateOld = endDate
         for i in range(signalsOld.shape[1]):
-            endDateOld = pd.to_datetime(endDate) - pd.Timedelta(days=1)
+            endDateOld = pd.to_datetime(endDateOld) - pd.Timedelta(days = 1)
             while not endDateOld in marketCalendar.index:
         	    if os.path.exists(f"{outDir}/{outPrefix}_{endDateOld.strftime('%Y%m%d')}.csv"):
         		    break
