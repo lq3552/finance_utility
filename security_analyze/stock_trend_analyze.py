@@ -37,6 +37,7 @@ def run_data_analyzer(nproc: int, codes: list[str], names: list[str], startDate:
         		    break
         	    endDateOld = endDateOld - pd.Timedelta(days=1)
             endDateOld = endDateOld.strftime("%Y%m%d")
+            if i == 0: endDateOld0 = endDateOld
             print("分析T-" + str(i+1) + "期信号")
             signalsOld[:,i], _ = zip(*tqdm(pool.imap(analyze_stock_data_multiprocess,
         	                     zip(codes, itertools.repeat(startDate), itertools.repeat(endDateOld), itertools.repeat(inDir), itertools.repeat(priceLimit))),
@@ -49,7 +50,7 @@ def run_data_analyzer(nproc: int, codes: list[str], names: list[str], startDate:
                        index = pd.Index(codes, name = "股票代码"))
     df.sort_values(by = ["购买信号","上期信号", "上上期信号", "股票代码"], axis = 0, ascending = False, inplace = True) # by = [col2, col1] means sort col1 first, then col2
     try: 
-        dfOld = pd.read_csv(f"{outDir}/{outPrefix}_{endDateOld}.csv", dtype = {"股票代码": str, "备注": str})
+        dfOld = pd.read_csv(f"{outDir}/{outPrefix}_{endDateOld0}.csv", dtype = {"股票代码": str, "备注": str})
         dfOld.set_index("股票代码", inplace=True)
         df["上期备注"] = dfOld["备注"]
     except:
