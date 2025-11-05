@@ -18,7 +18,9 @@ class DataAnalyzer(object):
     SELL             = -1
     SPECULATE        = 0
     RISING_SHORT     = 2
-    RISING_LONG      = 3
+    RISING_LONG_NEW  = 3
+    RISING_LONG_MID  = 4 # best buy long between 3-4
+    RISING_LONG_OLD  = 5
     PeriodAlias = [[0, "d", "D", "Day", "day"],
                    [1, "w", "W",  "Week", "week"],
                    [2, "m", "M", "Month", "month"],
@@ -40,7 +42,8 @@ class DataAnalyzer(object):
                         60: self.compute_moving_average(1, 60)}
         self._MAMonth = {5: self.compute_moving_average(2, 5),
                         10: self.compute_moving_average(2, 10),
-                        20: self.compute_moving_average(2, 20)}
+                        20: self.compute_moving_average(2, 20),
+                        60: self.compute_moving_average(2, 60)}
         self._MAHour =  {5: self.compute_moving_average(3, 5),
                         20: self.compute_moving_average(3, 20),
                         60: self.compute_moving_average(3, 60)}
@@ -101,12 +104,12 @@ class DataAnalyzer(object):
         data = self.get_closing_price_history(period)
 
         if len(data) < window: # not enough data, should only happen to Month-K
-            return np.zeros(1)
+            return np.array([np.nan])
         try:
             movingAverages = np.convolve(data, np.ones(window) / window, mode = "valid")
             return movingAverages.round(decimals = 2)
         except:
-            return np.zeros(1)
+            return np.array([np.nan])
 
     def get_moving_average(self, period) -> np.ndarray:
         '''
@@ -210,11 +213,24 @@ class DataAnalyzer(object):
                 if self._check_MA_trend("short") <= 0:
                     return self.SPECULATE
         # rising trend
-        return self.RISING_SHORT if length == "short" else self.RISING_LONG
-
-    def send_signal(self, priceLimit : np.float64 = 9999) -> int:
+        if length == "long":
+            # considering the edge case: the stock is under 20-month-old
+            if self._MAMonth[20][-1] >= self._MAMonth[60][-1]:
+                return self.RISING_LONG_OLD
+            if self._MAMonth[10][-1] >= self._MAMonth[20][-1]:
+                return self.RISING_LONG_MID
+            return self.RISING_LONG_NEW
+        return self.RISING_SHORT
+    
+    def get_signal(self, priceLimit : np.float64 = 9999) -> int:
         '''
-        get a signal indicating the decision made
+        get signals indicating the decision
+        '''
+        return self._get_signal_hardcoded(priceLimit)
+
+    def _get_signal_hardcoded(self, priceLimit : np.float64 = 9999) -> int:
+        '''
+        get a signal indicating the decision, hard-coded version
         '''
         priceClosing = self.get_closing_price_today()
         if (priceClosing > priceLimit):
@@ -231,13 +247,12 @@ class DataAnalyzer(object):
                     # return self.RISING_SHORT
                 # return self.SPECULATE
         	return self._check_MA_trend("long")
-        # Noob, let's start with simple trends
         elif (self._derivativeTodayDay[20] < 0 and self._derivativeTodayWeek[20] < 0):
             return self.IGNORE
         else:
             return self.SPECULATE
         
-    def predict_with_network(self):
+    def _get_signal_with_network(self):
         '''
         Predict price change utilizing for auxiliary decision making utilizing a pre-trained network
         '''

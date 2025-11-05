@@ -8,7 +8,7 @@ from security_tools.stock_trend import DataAnalyzer
 def analyze_stock_data(code: str, startDate: str, endDate: str, inDir: str, priceLimit: np.float64):
 	dataAcquisitor = DataAcquisitor(code, startDate, endDate, 1, inDir = inDir)
 	dataAnalyzer = DataAnalyzer(dataAcquisitor)
-	signal = dataAnalyzer.send_signal(priceLimit)
+	signal = dataAnalyzer.get_signal(priceLimit)
 	url   = dataAnalyzer.get_data_acquired().get_quotation_url()
 	return signal, url
 
