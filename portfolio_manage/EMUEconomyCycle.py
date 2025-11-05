@@ -3,7 +3,7 @@ import statsmodels.api as sm
 import scipy.stats as stats
 
 class EMUEconomyCycle(object):
-    def __init__(self, file_pmi = "economy_data/EMU_Composite_PMI_SPGlobal.txt", file_pmi_manu = "economy_data/EMU_Manu_PMI.txt", file_cpi = "economy_data/EMU_CPI.txt"):
+    def __init__(self, file_pmi = "economy_data/privat_EMU_Composite_PMI.txt", file_pmi_manu = "economy_data/privat_EMU_Manu_PMI.txt", file_cpi = "economy_data/EMU_CPI.txt"):
         dat_pmi = np.loadtxt(file_pmi)
         dat_pmi_manu = np.loadtxt(file_pmi_manu)
         dat_cpi = np.loadtxt(file_cpi)
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 
-    eec = EMUEconomyCycle("economy_data/EMU_Composite_PMI_SPGlobal.txt",
-            "economy_data/EMU_Manu_PMI.txt",
+    eec = EMUEconomyCycle("economy_data/privat_EMU_Composite_PMI.txt",
+            "economy_data/privat_EMU_Manu_PMI.txt",
             "economy_data/EMU_CPI.txt")
     pmi_cycle, pmi_trend, cpi_cycle, cpi_trend = eec.HP_filter(lamb = 1600)
     dpmi_trend = pmi_trend[:-1] - pmi_trend[1:]

@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     cec = ChinaEconomyCycle()
     cec.correlate_pmi_2nd_and_else()
-    pmi_cycle, pmi_trend, ppi_cycle, ppi_trend, cpi_cycle, cpi_trend = cec.HP_filter(lamb = 14400)
+    pmi_cycle, pmi_trend, ppi_cycle, ppi_trend, cpi_cycle, cpi_trend = cec.HP_filter(lamb = 1600)
     dpmi_trend = pmi_trend[:-1] - pmi_trend[1:]
     dppi_trend = ppi_trend[:-1] - ppi_trend[1:]
     dcpi_trend = cpi_trend[:-1] - cpi_trend[1:]

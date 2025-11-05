@@ -1,5 +1,6 @@
 #source: National Bureau of Statistics of China https://www.stats.gov.cn/english/
 #Month  PMI
+202510  50.0
 202509  50.6
 202508  50.5
 202507  50.2
